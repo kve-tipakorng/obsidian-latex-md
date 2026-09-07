@@ -14,3 +14,9 @@ npm-debug.log*
 
 # Obsidian plugin dev convenience (not used here, but common)
 data.json
+
+# Local, non-plugin content: real (confidential) notes dropped in for
+# sample/testing purposes. Never commit these to a repo meant to be a
+# general-purpose, shareable Obsidian plugin.
+resources/
+test-artifacts/halter-side-by-side-sample.html

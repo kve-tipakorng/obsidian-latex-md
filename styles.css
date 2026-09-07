@@ -335,7 +335,8 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	border-collapse: collapse;
 	border-spacing: 0;
 	margin: 1.4em auto;
-	width: auto;
+	width: 100%;
+	table-layout: auto;
 }
 
 .markdown-rendered table,
@@ -355,6 +356,7 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	text-align: left;
 	border: none;
 	padding: 0.35em 0.9em;
+	overflow-wrap: break-word;
 }
 
 .markdown-rendered table tbody tr {
@@ -369,6 +371,7 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 .markdown-rendered table tbody td {
 	border: none;
 	padding: 0.3em 0.9em;
+	overflow-wrap: break-word;
 }
 
 .markdown-rendered table tbody tr:last-child {

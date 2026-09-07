@@ -144,3 +144,46 @@ gitflow: `main` and `develop` created, all implementation work done on
 (left `main` for the user to cut an actual release from). Commits are
 split by concern (scaffold, fonts, typography CSS, heading numbering,
 title block + settings, docs) rather than one giant commit.
+
+## 2026-09-07 - Table column sizing, found via real-note testing
+
+Rather than testing purely with synthetic sample content, validated the
+plugin against two of the user's own real notes (dropped into a
+gitignored `resources/` folder - confidential business documents used
+only as realistic sample material, never committed; see the new
+`.gitignore` entries). Rendered them through the plugin's actual
+`styles.css` in a standalone HTML harness
+(`test-artifacts/halter-side-by-side-sample.html`, itself gitignored)
+with a toggle between plain/default-Obsidian-style and LaTeX Look
+styling, so the plugin could be visually reviewed without installing it
+into a live vault.
+
+This surfaced a real table-layout problem that synthetic test content
+hadn't: `.markdown-rendered table` was `width: auto`, so the browser's
+default table algorithm sized (and centered) the table purely by
+shrink-to-content, with no `table-layout` mode specified. On a 6-column
+table with one long-text column ("Risk") next to several short ones
+("Impact", "Likelihood", "Rating"), this produced uneven, cramped-looking
+columns.
+
+Two iterations were tried:
+
+1. **`table-layout: fixed` + equal-ish columns.** Rejected on user
+   feedback - this forces every column to the same width regardless of
+   content, which is the wrong kind of "balanced": short columns end up
+   wasting space while the long-text column wraps into tall rows
+   unnecessarily.
+2. **`table-layout: auto` + `width: 100%`** (the change actually kept).
+   This is the browser's standard content-aware algorithm: each column's
+   width is still driven by its content's natural size, but the table
+   stretches to fill the container instead of shrink-wrapping, and the
+   extra space is distributed in proportion to each column's content
+   width. Verified on the real 6-column risk table: `#` ended up at 41px,
+   `Risk` at 163px, down to `Impact` at 88px - proportional to actual
+   content, filling the full 613px pane width with no horizontal
+   overflow. This directly minimizes wrapped row height, which was the
+   actual goal.
+
+Also added `overflow-wrap: break-word` on table header/body cells as a
+safety net, in case a future note has an unbroken long token (a filename,
+a URL) in a narrow column.
