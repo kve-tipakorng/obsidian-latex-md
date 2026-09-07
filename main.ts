@@ -1,7 +1,10 @@
 import {
+	App,
 	MarkdownPostProcessorContext,
 	MarkdownView,
 	Plugin,
+	PluginSettingTab,
+	Setting,
 	TFile,
 } from "obsidian";
 
@@ -44,6 +47,8 @@ export default class LatexLookPlugin extends Plugin {
 		this.registerMarkdownPostProcessor(
 			this.titleBlockPostProcessor.bind(this)
 		);
+
+		this.addSettingTab(new LatexLookSettingTab(this.app, this));
 	}
 
 	onunload(): void {
@@ -171,5 +176,89 @@ export default class LatexLookPlugin extends Plugin {
 		}
 
 		container.insertBefore(block, container.firstChild);
+	}
+}
+
+class LatexLookSettingTab extends PluginSettingTab {
+	plugin: LatexLookPlugin;
+
+	constructor(app: App, plugin: LatexLookPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
+
+		containerEl.createEl("h2", { text: "LaTeX Look" });
+		containerEl.createEl("p", {
+			text:
+				"Typography settings for the LaTeX article-style Reading view and PDF export.",
+			cls: "setting-item-description",
+		});
+
+		new Setting(containerEl)
+			.setName("Automatic heading numbering")
+			.setDesc(
+				"Number headings like LaTeX \\section / \\subsection (1, 1.1, 1.1.1, ...)."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.headingNumbering)
+					.onChange(async (value) => {
+						this.plugin.settings.headingNumbering = value;
+						await this.plugin.saveSettings();
+						this.plugin.applySettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Title block from frontmatter")
+			.setDesc(
+				"Render a \\maketitle-style block (title, subtitle, author, date) at the top of notes that have matching frontmatter fields."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.titleBlock)
+					.onChange(async (value) => {
+						this.plugin.settings.titleBlock = value;
+						await this.plugin.saveSettings();
+						this.plugin.applySettings();
+						this.plugin.rerenderOpenNotes();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Base font size")
+			.setDesc(
+				"Matches the LaTeX article class options (10pt / 11pt / 12pt)."
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions({ "10pt": "10pt", "11pt": "11pt", "12pt": "12pt" })
+					.setValue(this.plugin.settings.baseFontSize)
+					.onChange(async (value) => {
+						this.plugin.settings.baseFontSize = value as BaseFontSize;
+						await this.plugin.saveSettings();
+						this.plugin.applySettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Paper size (print / export)")
+			.setDesc(
+				"Target page width and margin for @media print, used by Obsidian's Export to PDF. See the README for an important caveat about Obsidian's PDF export margin setting."
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions({ letter: "Letter", a4: "A4" })
+					.setValue(this.plugin.settings.paperSize)
+					.onChange(async (value) => {
+						this.plugin.settings.paperSize = value as PaperSize;
+						await this.plugin.saveSettings();
+						this.plugin.applySettings();
+					})
+			);
 	}
 }
