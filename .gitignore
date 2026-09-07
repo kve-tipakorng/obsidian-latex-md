@@ -1,0 +1,16 @@
+# Node / build tooling
+node_modules/
+*.log
+npm-debug.log*
+
+# OS cruft
+.DS_Store
+
+# Editor
+.vscode/
+
+# Local Claude Code tool config (not part of the plugin)
+.claude/
+
+# Obsidian plugin dev convenience (not used here, but common)
+data.json
