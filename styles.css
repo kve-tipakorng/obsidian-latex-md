@@ -9,7 +9,7 @@
  *   1. Bundled fonts (Latin Modern Roman, GUST Font License)
  *   2. Custom properties (driven live from main.ts / settings)
  *   3. Base typography (body text, paragraphs, justification, indent)
- *   4. Headings + automatic numbering (pure CSS counters) [pending]
+ *   4. Headings + automatic numbering (pure CSS counters)
  *   5. Title block (\maketitle-style; DOM injected by main.ts) [pending]
  *   6. Blockquotes (LaTeX `quote` environment look)
  *   7. Code blocks (`verbatim`-style box)
@@ -157,6 +157,88 @@ h6 + p,
 	font-size: 1em;
 	font-style: italic;
 	margin: 1.1em 0 0.4em 0;
+}
+
+/* Heading numbering: pure CSS counters. Obsidian's rendered reading-view
+   headings are flat siblings (no nested <section>s), but CSS counters
+   still work correctly on a flat DOM as long as counter-reset/-increment
+   are declared on the heading elements themselves in document order, so
+   no JS post-processor is needed for this feature. Scoped under a body
+   class toggled live from the settings tab. */
+
+body.latex-look-heading-numbers .markdown-rendered {
+	counter-reset: llh1 llh2 llh3 llh4 llh5 llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h1 {
+	counter-increment: llh1;
+	counter-reset: llh2 llh3 llh4 llh5 llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h2 {
+	counter-increment: llh2;
+	counter-reset: llh3 llh4 llh5 llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h3 {
+	counter-increment: llh3;
+	counter-reset: llh4 llh5 llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h4 {
+	counter-increment: llh4;
+	counter-reset: llh5 llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h5 {
+	counter-increment: llh5;
+	counter-reset: llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h6 {
+	counter-increment: llh6;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h1::before {
+	content: counter(llh1) "\2003";
+	font-weight: 700;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h2::before {
+	content: counter(llh1) "." counter(llh2) "\2003";
+	font-weight: 700;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h3::before {
+	content: counter(llh1) "." counter(llh2) "." counter(llh3) "\2003";
+	font-weight: 700;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h4::before {
+	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
+		counter(llh4) "\2003";
+	font-weight: 700;
+	font-style: normal;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h5::before {
+	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
+		counter(llh4) "." counter(llh5) "\2003";
+	font-weight: 700;
+	font-style: normal;
+}
+
+body.latex-look-heading-numbers .markdown-rendered h6::before {
+	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
+		counter(llh4) "." counter(llh5) "." counter(llh6) "\2003";
+	font-weight: 700;
+	font-style: normal;
+}
+
+/* Never number Obsidian's own inline note title (a contenteditable div,
+   not a real heading) even though it visually sits above everything. */
+.inline-title::before {
+	content: none !important;
 }
 
 /* ------------------------------------------------------------------ */
