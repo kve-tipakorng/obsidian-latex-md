@@ -10,7 +10,7 @@
  *   2. Custom properties (driven live from main.ts / settings)
  *   3. Base typography (body text, paragraphs, justification, indent)
  *   4. Headings + automatic numbering (pure CSS counters)
- *   5. Title block (\maketitle-style; DOM injected by main.ts) [pending]
+ *   5. Title block (\maketitle-style; DOM injected by main.ts)
  *   6. Blockquotes (LaTeX `quote` environment look)
  *   7. Code blocks (`verbatim`-style box)
  *   8. Tables (booktabs-style rules)
@@ -239,6 +239,48 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
    not a real heading) even though it visually sits above everything. */
 .inline-title::before {
 	content: none !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Title block (\maketitle)                                         */
+/* ------------------------------------------------------------------ */
+
+.latex-look-title-block {
+	font-family: var(--latex-look-serif);
+	text-align: center;
+	margin: 0 0 2em 0;
+	padding: 0 0 1.2em 0;
+	border-bottom: 1px solid var(--latex-look-rule-color);
+}
+
+.latex-look-title-block .latex-look-title {
+	font-size: 2em;
+	font-weight: 700;
+	line-height: 1.2;
+	margin-bottom: 0.5em;
+}
+
+.latex-look-title-block .latex-look-subtitle {
+	font-size: 1.3em;
+	font-weight: 400;
+	font-style: italic;
+	line-height: 1.25;
+	margin-bottom: 0.9em;
+	color: var(--text-muted);
+}
+
+.latex-look-title-block .latex-look-meta {
+	font-size: 1em;
+	line-height: 1.4;
+}
+
+.latex-look-title-block .latex-look-author {
+	margin-bottom: 0.15em;
+}
+
+.latex-look-title-block .latex-look-date {
+	font-size: 0.95em;
+	color: var(--text-muted);
 }
 
 /* ------------------------------------------------------------------ */
