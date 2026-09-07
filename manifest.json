@@ -1,0 +1,10 @@
+{
+	"id": "latex-look",
+	"name": "LaTeX Look",
+	"version": "1.0.0",
+	"minAppVersion": "1.4.0",
+	"description": "Renders notes in Reading view (and PDF export) styled like a classic LaTeX article: justified serif body text, numbered headings, a maketitle-style title block from frontmatter, and booktabs-style tables.",
+	"author": "Tipakorn Greigarn",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}

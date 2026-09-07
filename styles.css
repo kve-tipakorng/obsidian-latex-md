@@ -1,0 +1,31 @@
+/*
+ * LaTeX Look - styles.css
+ *
+ * A CSS-only approximation of a classic LaTeX `article`-class layout for
+ * Obsidian's Reading view and PDF export. This is NOT a real TeX engine;
+ * it only approximates typographic conventions using CSS.
+ *
+ * Structure of this file (filled in incrementally as features land):
+ *   1. Bundled fonts (Latin Modern Roman, GUST Font License)
+ *   2. Custom properties (driven live from main.ts / settings)
+ */
+
+/* ------------------------------------------------------------------ */
+/* 2. Custom properties                                                */
+/* ------------------------------------------------------------------ */
+
+body {
+	/* Overridden live from main.ts based on the "base font size" setting. */
+	--latex-look-font-size: 11pt;
+
+	/*
+	 * Bundled Latin Modern first, then widely-available LaTeX-adjacent
+	 * system serif fallbacks, so the look degrades gracefully on a system
+	 * where the bundled font somehow fails to load.
+	 */
+	--latex-look-serif: "Latin Modern Roman", "CMU Serif", "Nimbus Roman",
+		"Nimbus Roman No9 L", Georgia, "Times New Roman", Times, serif;
+
+	--latex-look-code-border: var(--background-modifier-border);
+	--latex-look-rule-color: var(--text-normal);
+}
