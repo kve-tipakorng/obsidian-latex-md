@@ -1,8 +1,17 @@
 # LaTeX Look
 
-An Obsidian plugin that makes Markdown notes render — in Reading view and in
-Export-to-PDF — as if they were typeset from a classic LaTeX `article`-class
-template.
+An Obsidian plugin that adds a Command Palette command,
+**"Export current note as LaTeX-look PDF"**, which exports the currently
+open note as a PDF typeset to look like a classic LaTeX `article`-class
+document — via Obsidian's own built-in "Export to PDF" flow (the same
+native save-file dialog Obsidian already provides).
+
+**Normal note viewing is untouched.** This plugin does not change how any
+note looks in Reading view, Live Preview, or Source mode. It only applies
+its styling for the duration of the export command, to the note being
+exported, and reverts automatically as soon as you switch away from it.
+If you never run the export command, this plugin has no visible effect at
+all.
 
 This is a **CSS/typography approximation**, not a real LaTeX engine. There is
 no Pandoc, no LaTeX distribution, and no network calls involved — everything
@@ -10,9 +19,33 @@ ships bundled inside the plugin and runs fully offline.
 
 Primary use case: internal KV Electronics (KVE) work documents (reports,
 specs, memos) that should look clean and professional rather than
-"academic paper" cute.
+"academic paper" cute, when exported to share as a PDF.
+
+## How it works
+
+1. Open the note you want to export.
+2. Open the Command Palette (Cmd/Ctrl+P) and run **"Export current note as
+   LaTeX-look PDF"**.
+3. The plugin switches the note to Reading view (if it isn't already),
+   applies the LaTeX-look styling just to that note, and then triggers
+   Obsidian's native "Export to PDF" command — the same save-file dialog
+   you'd get from Obsidian's own File menu.
+4. Save the PDF wherever you like. As soon as you switch to another note
+   (or back), the plugin automatically reverts the note to plain,
+   untouched Obsidian styling — there is nothing to undo manually.
+
+If the command can't find Obsidian's built-in PDF export command (for
+example because the core plugin that provides it is disabled), it shows a
+notice explaining that and leaves the note in its normal, unstyled state.
+
+If there is no active Markdown note (e.g. focus is on the graph view or an
+empty pane), the command is greyed out / unavailable in the Command
+Palette.
 
 ## Features
+
+All of the following apply **only to the note being exported, only for the
+duration of the export command** — never to Reading view in general.
 
 - **Typography**: body text set in Latin Modern Roman (a free, GUST/LPPL
   licensed clone of the classic Computer Modern / LaTeX font), bundled as
@@ -22,12 +55,11 @@ specs, memos) that should look clean and professional rather than
   paragraph spacing).
 - **Automatic heading numbering**: H1 -> "1", H2 -> "1.1", H3 -> "1.1.1",
   etc., like LaTeX's `\section` / `\subsection` / `\subsubsection`,
-  implemented with pure CSS counters (no re-render needed, toggle it live
-  in settings).
+  implemented with pure CSS counters, toggleable in settings.
 - **Title block**: if a note's frontmatter has `title`, `subtitle`,
   `author`, and/or `date`, a centered `\maketitle`-style block is rendered
-  at the top of the note in Reading view. Notes without that frontmatter
-  are left untouched.
+  at the top of the exported PDF. Notes without that frontmatter are left
+  untouched.
 - **Blockquotes** styled like a LaTeX `quote` environment (indented on both
   sides, no big decorative quotation mark).
 - **Code blocks** styled like a `verbatim` block (subtle border, existing
@@ -43,10 +75,10 @@ specs, memos) that should look clean and professional rather than
   - Toggle: frontmatter title block (default **on**)
   - Dropdown: base font size — 10pt / 11pt / 12pt (default **11pt**),
     matching the standard `article` class options
-  - Dropdown: paper size for print/export — Letter / A4 (default
-    **Letter**)
+  - Dropdown: paper size for export — Letter / A4 (default **Letter**)
 
-  All settings apply live — no restart required.
+  Settings are read fresh each time you run the export command — there is
+  nothing to apply live, since nothing is visible until you export.
 
 ## Installation
 
@@ -83,12 +115,15 @@ from git without a community-store listing.
 
 ## Settings explained
 
+All of these only take effect when you run the "Export current note as
+LaTeX-look PDF" command — they have no effect on ordinary Reading view.
+
 | Setting | Default | Effect |
 |---|---|---|
-| Automatic heading numbering | On | Adds "1", "1.1", "1.1.1" ... prefixes to H1-H6 in Reading view / export, via CSS counters. Numbering resets per note automatically. |
-| Title block from frontmatter | On | Looks for `title` / `subtitle` / `author` / `date` in a note's YAML frontmatter and renders a centered title block above the body. Notes without any of these fields are unaffected. |
-| Base font size | 11pt | Sets the body text size for Reading view and print/export, mirroring LaTeX's `\documentclass[10pt\|11pt\|12pt]{article}` options. |
-| Paper size (print / export) | Letter | Sets the `@page` size and an approximate 1in (Letter) / 25mm (A4) margin used by `@media print`, which is what Obsidian's "Export to PDF" renders against. |
+| Automatic heading numbering | On | Adds "1", "1.1", "1.1.1" ... prefixes to H1-H6 in the exported PDF, via CSS counters. Numbering resets per note automatically. |
+| Title block from frontmatter | On | Looks for `title` / `subtitle` / `author` / `date` in a note's YAML frontmatter and renders a centered title block above the body in the exported PDF. Notes without any of these fields are unaffected. |
+| Base font size | 11pt | Sets the body text size in the exported PDF, mirroring LaTeX's `\documentclass[10pt\|11pt\|12pt]{article}` options. |
+| Paper size (export) | Letter | Sets the `@page` size and an approximate 1in (Letter) / 25mm (A4) margin used when exporting, which is what Obsidian's "Export to PDF" renders against. |
 
 ## Important caveat: PDF export margins
 

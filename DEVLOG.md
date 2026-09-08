@@ -187,3 +187,106 @@ Two iterations were tried:
 Also added `overflow-wrap: break-word` on table header/body cells as a
 safety net, in case a future note has an unbroken long token (a filename,
 a URL) in a narrow column.
+
+## 2026-09-08 - Architecture change: opt-in export command instead of always-on Reading-view theme
+
+### What it was, and what was wrong with it
+
+Up to this point, the plugin applied its LaTeX styling **globally and
+always**: `styles.css` had unconditional rules on `.markdown-rendered`,
+and `main.ts`'s `applySettings()` permanently toggled body classes
+(`latex-look-heading-numbers`, `latex-look-title-block-enabled`) and set
+`--latex-look-font-size` the moment the plugin loaded - every note's
+Reading view was restyled the instant the plugin was enabled, with no way
+to opt out short of disabling the plugin entirely. The title-block
+post-processor also ran unconditionally on every rendered note.
+
+The user corrected this directly: that's wrong. A plugin should not
+silently change how every note looks the moment it's installed - the
+LaTeX styling is specifically useful for producing a nicely typeset PDF to
+hand to someone else, not for reading notes day-to-day inside Obsidian.
+
+### What it is now
+
+The plugin no longer touches Reading view at all by default. All styling
+is applied on-demand by a new Command Palette command, **"Export current
+note as LaTeX-look PDF"** (id `export-latex-look-pdf`), which:
+
+1. Ensures the active `MarkdownView` is in `"preview"` mode (awaiting
+   `MarkdownView.setState({ mode: "preview" }, { history: false })` if a
+   switch is needed), so the export captures rendered HTML, not source.
+2. Applies the export styling: adds `latex-look-exporting` to
+   `document.body.classList`, toggles the heading-numbering/title-block
+   sub-classes per settings, sets the font-size custom property, and
+   rewrites the injected `@page` `<style>` element for the paper-size
+   setting - all logic that previously ran unconditionally at `onload()`,
+   now only ever invoked from inside the export flow.
+3. Forces a full re-render (`previewMode.rerender(true)`, same guarded
+   escape hatch as before) so the title-block post-processor - now gated
+   behind a `private exporting` flag, returning early when false - picks
+   up the frontmatter title block, then waits a frame plus a short delay
+   for layout to settle.
+4. Locates and triggers Obsidian's own built-in "Export to PDF" command
+   (see below for why this is done dynamically rather than by hardcoded
+   id), which pops Obsidian's normal native save-file dialog - nothing
+   about the actual PDF generation is reimplemented by this plugin.
+5. Reverts everything (see below for why on `active-leaf-change` rather
+   than a timer) - removes the body classes, strips any injected
+   `.latex-look-title-block` element out of that note's DOM, and
+   re-renders the view once more so it snaps back to stock Obsidian
+   styling.
+
+`styles.css` was restructured so every selector that used to target
+`.markdown-rendered` (and the title block, blockquotes, code, tables)
+is now prefixed with `body.latex-look-exporting` - with that class absent
+(i.e. always, unless an export is actively running), none of the rules in
+the file match anything, and Reading view is byte-for-byte vanilla
+Obsidian. Heading numbering is additionally gated behind its own
+`latex-look-heading-numbers` sub-class, combined with the export gate
+(`body.latex-look-exporting.latex-look-heading-numbers ...`), since it's
+still an independently toggleable setting. `@font-face` declarations were
+left unconditional - loading a font file has no visible effect until
+something actually sets that `font-family`, so there's nothing to gate.
+
+`rerenderOpenNotes()` (previously used to instantly restyle all open
+notes when a setting toggle changed, since styling used to be always
+visible) was deleted outright - dead code now that settings have no
+effect until the next time the export command runs, so there's no "open
+notes need to instantly reflect this toggle" use case left to serve. A
+narrower `rerenderView(view)` helper remains, used only internally by the
+export flow itself (to trigger the title block on export-start, and to
+clear it again on export-end).
+
+### Two specific technical choices worth recording
+
+**(a) Why the "Export to PDF" command is looked up dynamically, not
+hardcoded.** Obsidian's internal command id for its built-in PDF export
+(something like `"file-manager:...pdf"` or similar depending on version)
+is not part of any stable public API and is known to have varied across
+Obsidian releases. Hardcoding a specific id risks silently breaking on a
+future Obsidian update with no clear failure signal to the user beyond
+"the command did nothing." Instead, `findExportToPdfCommandId()` scans
+`(app as any).commands.commands` (an object keyed by command id) for any
+entry whose `id` or `name` matches `/export.*pdf/i`, and calls
+`executeCommandById` on whatever it finds. If nothing matches (e.g. the
+core plugin providing PDF export is disabled), the plugin shows a
+`Notice` explaining that and immediately reverts the styling rather than
+leaving the note stuck in export-styled limbo.
+
+**(b) Why cleanup waits for the next `active-leaf-change` event instead
+of a fixed delay.** Obsidian's native "Export to PDF" flow hands off to a
+real save-file dialog, and there is no API signal for when that dialog
+closes - its duration is entirely up to the user (they might take two
+seconds or two minutes to pick a location, or cancel outright). A fixed
+timeout would either revert the styling while the export is mid-flight
+(too short) or leave the note visibly LaTeX-styled for an
+arbitrary/awkward stretch after the user is done (too long). Listening
+once for `"active-leaf-change"` instead ties cleanup to something that
+reliably happens as soon as the user's attention actually moves on - they
+switch to another note, or back to the same one - with no guessing
+involved. The registered listener is removed via `workspace.offref()` the
+first time it fires, so it never fires twice. A `setTimeout` safety net
+(5 minutes) backstops this in case the user never changes leaves after
+running the command, so the plugin can never get permanently stuck
+mid-export; `onunload()` also unconditionally clears the export state
+regardless of whether that listener/timeout ever fired.

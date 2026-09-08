@@ -2,11 +2,18 @@
 
 ## Current state
 
-The plugin is feature-complete against the original brief and builds
-cleanly. It has **not** been visually verified inside a real Obsidian
-instance (no Obsidian UI access in the environment this was built in) -
-see `test-artifacts/TEST_PLAN.md` for the manual verification steps that
-still need to be run by a human with Obsidian installed.
+The plugin is feature-complete against the current design (opt-in export
+via a Command Palette command - see `DEVLOG.md`'s 2026-09-08 entry for the
+architecture change from the original always-on-Reading-view design) and
+builds cleanly. It has **not** been visually verified inside a real
+Obsidian instance (no Obsidian UI access in the environment this was built
+in) - see `test-artifacts/TEST_PLAN.md` for the manual verification steps
+that still need to be run by a human with Obsidian installed.
+
+Normal Reading view is now untouched by default. All LaTeX-look styling is
+applied only for the duration of running the **"Export current note as
+LaTeX-look PDF"** command from the Command Palette, and is automatically
+reverted as soon as the user's active leaf changes afterward.
 
 ### Done
 
@@ -18,13 +25,32 @@ still need to be run by a human with Obsidian installed.
   under `fonts/`, sourced from the CTAN `lm` package (GUST Font License)
   and converted with `fonttools` inside Docker - no CDN, no network calls
   at runtime. License + provenance documented in `fonts/`.
+- Command Palette command `export-latex-look-pdf` ("Export current note as
+  LaTeX-look PDF"), available only when there's an active `MarkdownView`
+  (via `checkCallback`), that: switches the view to preview mode if
+  needed, applies export-only styling, forces a re-render so the
+  title-block post-processor runs, dynamically locates and triggers
+  Obsidian's built-in "Export to PDF" command (matched by regex over
+  `app.commands.commands` rather than a hardcoded id - the id isn't a
+  stable public API), and reverts all styling on the next
+  `active-leaf-change` event (with a 5-minute `setTimeout` safety net in
+  case that never fires).
+- All CSS in `styles.css` (typography, heading numbering, title block,
+  blockquotes, code blocks, tables) is scoped under
+  `body.latex-look-exporting`, a class only ever added to `<body>` for the
+  duration of the export command - so Reading view is untouched unless an
+  export is actively running. Heading numbering is additionally gated
+  behind its own `latex-look-heading-numbers` sub-class combined with the
+  export gate.
 - Base typography: justified body text, first-line indent, no
-  inter-paragraph blank space, tight heading spacing, headings bold/serif.
-- Automatic heading numbering via pure CSS counters
-  (`body.latex-look-heading-numbers`), toggleable live in settings.
+  inter-paragraph blank space, tight heading spacing, headings bold/serif
+  - all export-only per the above.
+- Automatic heading numbering via pure CSS counters, toggleable in
+  settings (effective next export, not live).
 - `\maketitle`-style title block from frontmatter (`title`/`subtitle`/
-  `author`/`date`) via a markdown post-processor, toggleable live in
-  settings (forces a reading-view re-render on toggle).
+  `author`/`date`) via a markdown post-processor gated behind a
+  `private exporting` instance flag - a no-op outside of an active
+  export, and any injected block is stripped from the DOM on cleanup.
 - Blockquotes styled as a LaTeX `quote` environment.
 - Code blocks styled as a `verbatim` box (border + existing Obsidian
   monospace/syntax highlighting).
@@ -33,12 +59,20 @@ still need to be run by a human with Obsidian installed.
 - Math (MathJax) left alone aside from minor line-height/margin nudges.
 - Settings tab: heading-numbering toggle, title-block toggle, base
   font-size dropdown (10/11/12pt), paper-size dropdown (Letter/A4),
-  persisted via `loadData`/`saveData`, all applied live.
+  persisted via `loadData`/`saveData`. Descriptions updated to say they
+  control the export, not Reading view; they no longer apply "live" since
+  nothing is visible to apply them to until the export command runs.
 - Print/export CSS: `@media print` rules plus a JS-injected `@page`
-  size/margin rule driven by the paper-size setting.
+  size/margin rule driven by the paper-size setting, written fresh at the
+  start of each export.
+- `rerenderOpenNotes()` (used previously to instantly restyle all open
+  notes on a live settings change) was deleted as dead code - there is no
+  longer a "propagate this setting change to already-open notes" use case
+  now that nothing is visible until export time.
 - `README.md`, this `HANDOFF.md`, `DEVLOG.md`, and
-  `test-artifacts/TEST_PLAN.md` (with a sample note at
-  `test-artifacts/sample-note.md` exercising every feature).
+  `test-artifacts/TEST_PLAN.md` updated for the new command-based flow
+  (with a sample note at `test-artifacts/sample-note.md` exercising every
+  feature).
 - Git repo initialized with gitflow branches (`main`, `develop`,
   `feature/initial-plugin`), feature branch merged into `develop`.
 
@@ -57,12 +91,42 @@ implemented, and they were not attempted or partially started:
 
 ### Known limitations / things a future maintainer should know
 
-1. **No live Obsidian verification.** This was built and unit-tested only
-   via `tsc`/`esbuild` in Docker; there is no Obsidian instance in this
-   environment to load the plugin into and visually confirm it. The next
-   person to touch this should load it into a real (test) vault and work
-   through `test-artifacts/TEST_PLAN.md` before trusting the visual
-   output, especially:
+1. **No live Obsidian verification - and this is now more true than
+   before.** This was built and unit-tested only via `tsc`/`esbuild` in
+   Docker; there is no Obsidian instance in this environment to load the
+   plugin into and visually confirm it. The next person to touch this
+   should load it into a real (test) vault and work through
+   `test-artifacts/TEST_PLAN.md` before trusting the visual output.
+   Beyond the pre-existing unknowns below, the entire export command flow
+   added on 2026-09-08 - mode switch, dynamic command lookup, the actual
+   native PDF dialog, and cleanup-on-leaf-change - is brand new and has
+   **never** been run against a real Obsidian instance, which is a bigger
+   unverified surface than the previous styling-only build had:
+   - Whether `MarkdownView.setState({ mode: "preview" }, { history: false })`
+     actually resolves its returned Promise only once the mode switch (and
+     associated re-render) has visibly completed, or resolves earlier -
+     this determines whether the subsequent `rerender(true)` call is
+     racing the mode switch in practice.
+   - Whether `(app as any).commands.commands` is actually shaped the way
+     assumed (an object keyed by command id, each value carrying `.id`
+     and `.name`) on the Obsidian version being tested, and whether the
+     regex `/export.*pdf/i` actually matches the real built-in command's
+     id/name without also matching something unintended.
+   - Whether `executeCommandById` on the located PDF-export command
+     actually opens the native save dialog synchronously enough that the
+     styling is still applied when Chromium captures the page - if
+     Obsidian defers the actual print/capture step, there could be a race
+     between styling application and export capture that the
+     requestAnimationFrame+50ms delay in `exportCurrentNoteAsPdf` doesn't
+     fully cover.
+   - Whether `"active-leaf-change"` reliably fires exactly once in the
+     expected way after a native OS save dialog closes (as opposed to,
+     say, firing multiple times, or not firing if focus handling around a
+     native dialog is unusual on some platform) - if it fires zero times,
+     the 5-minute safety-net timeout is the only thing that recovers; if
+     it fires unexpectedly early (e.g. some platform quirk triggers it
+     while the save dialog is still open), styling could revert before
+     the PDF is actually captured.
    - Whether the relative `url("fonts/...")` paths in `styles.css`
      actually resolve inside Obsidian's plugin CSS loading pipeline on
      their Obsidian version/platform (this is documented as supported for
@@ -76,11 +140,12 @@ implemented, and they were not attempted or partially started:
      selectors (`h1 + p`, etc.) are also included for robustness, but this
      hasn't been visually confirmed.
    - Whether `MarkdownView.previewMode.rerender(true)` (used to force a
-     re-render when the title-block toggle changes) is still present under
-     that name/signature on the Obsidian version being tested - it's an
+     re-render at export-start and export-end) is still present under that
+     name/signature on the Obsidian version being tested - it's an
      internal-ish API accessed via a type cast, guarded with `?.` so a
-     missing method degrades to "no immediate re-render" rather than a
-     crash, but the live-refresh UX should be checked.
+     missing method degrades to a no-op rather than a crash, but if it is
+     in fact missing/renamed on the tested version, the title block simply
+     won't appear in the export (silently), which should be checked for.
 2. **Heading numbering scope.** CSS counters number every `h1`-`h6` inside
    `.markdown-rendered`, including ones inside callouts or transcluded/
    embedded notes rendered inline. This mirrors LaTeX's "everything shares

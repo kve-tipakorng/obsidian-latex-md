@@ -1,11 +1,21 @@
 /*
  * LaTeX Look - styles.css
  *
- * A CSS-only approximation of a classic LaTeX `article`-class layout for
- * Obsidian's Reading view and PDF export. This is NOT a real TeX engine;
- * it only approximates typographic conventions using CSS.
+ * A CSS-only approximation of a classic LaTeX `article`-class layout,
+ * applied ONLY while exporting the current note to PDF via the plugin's
+ * "Export current note as LaTeX-look PDF" command. This is NOT a real TeX
+ * engine; it only approximates typographic conventions using CSS.
  *
- * Structure of this file (filled in incrementally as features land):
+ * Scoping: every rule below that touches note content is prefixed with
+ * `body.latex-look-exporting`, a class that main.ts adds to <body> only
+ * for the duration of the export command and removes immediately
+ * afterward. With that class absent (i.e. normal Reading view, all the
+ * time), none of these rules match anything - Reading view is untouched
+ * vanilla Obsidian. Heading numbering is additionally gated behind its
+ * own settings sub-class (`latex-look-heading-numbers`), also only ever
+ * applied during export.
+ *
+ * Structure of this file:
  *   1. Bundled fonts (Latin Modern Roman, GUST Font License)
  *   2. Custom properties (driven live from main.ts / settings)
  *   3. Base typography (body text, paragraphs, justification, indent)
@@ -21,6 +31,10 @@
 /* ------------------------------------------------------------------ */
 /* 1. Bundled fonts                                                    */
 /* ------------------------------------------------------------------ */
+
+/* @font-face declarations have no visual effect until a font-family
+   referencing them is actually used, so these can stay unconditional -
+   they just make the font available, they don't apply it. */
 
 @font-face {
 	font-family: "Latin Modern Roman";
@@ -59,7 +73,10 @@
 /* ------------------------------------------------------------------ */
 
 body {
-	/* Overridden live from main.ts based on the "base font size" setting. */
+	/* Overridden live from main.ts (only while exporting) based on the
+	   "base font size" setting. Declaring the property here has no visual
+	   effect on its own - it's only consumed by rules scoped under
+	   body.latex-look-exporting below. */
 	--latex-look-font-size: 11pt;
 
 	/*
@@ -78,13 +95,13 @@ body {
 /* 3. Base typography                                                  */
 /* ------------------------------------------------------------------ */
 
-.markdown-rendered {
+body.latex-look-exporting .markdown-rendered {
 	font-family: var(--latex-look-serif);
 	font-size: var(--latex-look-font-size);
 	line-height: 1.35;
 }
 
-.markdown-rendered p {
+body.latex-look-exporting .markdown-rendered p {
 	font-family: var(--latex-look-serif);
 	text-align: justify;
 	-webkit-hyphens: auto;
@@ -97,38 +114,38 @@ body {
 
 /* No blank gap between paragraphs; the indent alone marks a new one,
    like article.cls with \parskip = 0 and \parindent active. */
-.markdown-rendered p + p {
+body.latex-look-exporting .markdown-rendered p + p {
 	margin-top: 0;
 }
 
 /* First paragraph after a heading (or at the very top of the note, or
    right after the title block) is not indented, matching LaTeX's
    \@afterindentfalse behavior right after a sectioning command. */
-.markdown-rendered > .el-p:first-child > p,
-.markdown-rendered > p:first-child,
-.el-h1 + .el-p > p,
-.el-h2 + .el-p > p,
-.el-h3 + .el-p > p,
-.el-h4 + .el-p > p,
-.el-h5 + .el-p > p,
-.el-h6 + .el-p > p,
-h1 + p,
-h2 + p,
-h3 + p,
-h4 + p,
-h5 + p,
-h6 + p,
-.latex-look-title-block + .el-p > p,
-.latex-look-title-block + p {
+body.latex-look-exporting .markdown-rendered > .el-p:first-child > p,
+body.latex-look-exporting .markdown-rendered > p:first-child,
+body.latex-look-exporting .el-h1 + .el-p > p,
+body.latex-look-exporting .el-h2 + .el-p > p,
+body.latex-look-exporting .el-h3 + .el-p > p,
+body.latex-look-exporting .el-h4 + .el-p > p,
+body.latex-look-exporting .el-h5 + .el-p > p,
+body.latex-look-exporting .el-h6 + .el-p > p,
+body.latex-look-exporting h1 + p,
+body.latex-look-exporting h2 + p,
+body.latex-look-exporting h3 + p,
+body.latex-look-exporting h4 + p,
+body.latex-look-exporting h5 + p,
+body.latex-look-exporting h6 + p,
+body.latex-look-exporting .latex-look-title-block + .el-p > p,
+body.latex-look-exporting .latex-look-title-block + p {
 	text-indent: 0;
 }
 
-.markdown-rendered h1,
-.markdown-rendered h2,
-.markdown-rendered h3,
-.markdown-rendered h4,
-.markdown-rendered h5,
-.markdown-rendered h6 {
+body.latex-look-exporting .markdown-rendered h1,
+body.latex-look-exporting .markdown-rendered h2,
+body.latex-look-exporting .markdown-rendered h3,
+body.latex-look-exporting .markdown-rendered h4,
+body.latex-look-exporting .markdown-rendered h5,
+body.latex-look-exporting .markdown-rendered h6 {
 	font-family: var(--latex-look-serif);
 	font-weight: 700;
 	font-style: normal;
@@ -136,99 +153,104 @@ h6 + p,
 	line-height: 1.2;
 }
 
-.markdown-rendered h1 {
+body.latex-look-exporting .markdown-rendered h1 {
 	font-size: 1.7em;
 	margin: 1.4em 0 0.7em 0;
 }
 
-.markdown-rendered h2 {
+body.latex-look-exporting .markdown-rendered h2 {
 	font-size: 1.35em;
 	margin: 1.3em 0 0.6em 0;
 }
 
-.markdown-rendered h3 {
+body.latex-look-exporting .markdown-rendered h3 {
 	font-size: 1.15em;
 	margin: 1.2em 0 0.5em 0;
 }
 
-.markdown-rendered h4,
-.markdown-rendered h5,
-.markdown-rendered h6 {
+body.latex-look-exporting .markdown-rendered h4,
+body.latex-look-exporting .markdown-rendered h5,
+body.latex-look-exporting .markdown-rendered h6 {
 	font-size: 1em;
 	font-style: italic;
 	margin: 1.1em 0 0.4em 0;
 }
 
-/* Heading numbering: pure CSS counters. Obsidian's rendered reading-view
-   headings are flat siblings (no nested <section>s), but CSS counters
-   still work correctly on a flat DOM as long as counter-reset/-increment
-   are declared on the heading elements themselves in document order, so
-   no JS post-processor is needed for this feature. Scoped under a body
-   class toggled live from the settings tab. */
+/* ------------------------------------------------------------------ */
+/* 4. Heading numbering: pure CSS counters                             */
+/* ------------------------------------------------------------------ */
 
-body.latex-look-heading-numbers .markdown-rendered {
+/* Obsidian's rendered reading-view headings are flat siblings (no nested
+   <section>s), but CSS counters still work correctly on a flat DOM as
+   long as counter-reset/-increment are declared on the heading elements
+   themselves in document order, so no JS post-processor is needed for
+   this feature. Scoped under both the export gate and the heading-
+   numbering sub-setting, both of which main.ts only ever applies to
+   <body> for the duration of an export. */
+
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered {
 	counter-reset: llh1 llh2 llh3 llh4 llh5 llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h1 {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h1 {
 	counter-increment: llh1;
 	counter-reset: llh2 llh3 llh4 llh5 llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h2 {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h2 {
 	counter-increment: llh2;
 	counter-reset: llh3 llh4 llh5 llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h3 {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h3 {
 	counter-increment: llh3;
 	counter-reset: llh4 llh5 llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h4 {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h4 {
 	counter-increment: llh4;
 	counter-reset: llh5 llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h5 {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h5 {
 	counter-increment: llh5;
 	counter-reset: llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h6 {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h6 {
 	counter-increment: llh6;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h1::before {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h1::before {
 	content: counter(llh1) "\2003";
 	font-weight: 700;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h2::before {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h2::before {
 	content: counter(llh1) "." counter(llh2) "\2003";
 	font-weight: 700;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h3::before {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h3::before {
 	content: counter(llh1) "." counter(llh2) "." counter(llh3) "\2003";
 	font-weight: 700;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h4::before {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h4::before {
 	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
 		counter(llh4) "\2003";
 	font-weight: 700;
 	font-style: normal;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h5::before {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h5::before {
 	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
 		counter(llh4) "." counter(llh5) "\2003";
 	font-weight: 700;
 	font-style: normal;
 }
 
-body.latex-look-heading-numbers .markdown-rendered h6::before {
+body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h6::before {
 	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
 		counter(llh4) "." counter(llh5) "." counter(llh6) "\2003";
 	font-weight: 700;
@@ -237,7 +259,7 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 
 /* Never number Obsidian's own inline note title (a contenteditable div,
    not a real heading) even though it visually sits above everything. */
-.inline-title::before {
+body.latex-look-exporting.latex-look-heading-numbers .inline-title::before {
 	content: none !important;
 }
 
@@ -245,7 +267,12 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 /* 5. Title block (\maketitle)                                         */
 /* ------------------------------------------------------------------ */
 
-.latex-look-title-block {
+/* DOM injection of .latex-look-title-block itself is already gated in
+   main.ts (only happens while exporting and only when the title-block
+   setting is on), but these rules are scoped too for defense in depth
+   and consistency with every other section of this file. */
+
+body.latex-look-exporting .latex-look-title-block {
 	font-family: var(--latex-look-serif);
 	text-align: center;
 	margin: 0 0 2em 0;
@@ -253,14 +280,14 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	border-bottom: 1px solid var(--latex-look-rule-color);
 }
 
-.latex-look-title-block .latex-look-title {
+body.latex-look-exporting .latex-look-title-block .latex-look-title {
 	font-size: 2em;
 	font-weight: 700;
 	line-height: 1.2;
 	margin-bottom: 0.5em;
 }
 
-.latex-look-title-block .latex-look-subtitle {
+body.latex-look-exporting .latex-look-title-block .latex-look-subtitle {
 	font-size: 1.3em;
 	font-weight: 400;
 	font-style: italic;
@@ -269,16 +296,16 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	color: var(--text-muted);
 }
 
-.latex-look-title-block .latex-look-meta {
+body.latex-look-exporting .latex-look-title-block .latex-look-meta {
 	font-size: 1em;
 	line-height: 1.4;
 }
 
-.latex-look-title-block .latex-look-author {
+body.latex-look-exporting .latex-look-title-block .latex-look-author {
 	margin-bottom: 0.15em;
 }
 
-.latex-look-title-block .latex-look-date {
+body.latex-look-exporting .latex-look-title-block .latex-look-date {
 	font-size: 0.95em;
 	color: var(--text-muted);
 }
@@ -287,7 +314,7 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 /* 6. Blockquotes (LaTeX `quote` environment)                          */
 /* ------------------------------------------------------------------ */
 
-.markdown-rendered blockquote {
+body.latex-look-exporting .markdown-rendered blockquote {
 	font-family: var(--latex-look-serif);
 	margin: 1em 2.5em;
 	padding: 0 0 0 0.1em;
@@ -298,7 +325,7 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	background: transparent;
 }
 
-.markdown-rendered blockquote p {
+body.latex-look-exporting .markdown-rendered blockquote p {
 	text-align: justify;
 	text-indent: 0;
 }
@@ -307,19 +334,19 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 /* 7. Code blocks (`verbatim`-style)                                   */
 /* ------------------------------------------------------------------ */
 
-.markdown-rendered pre {
+body.latex-look-exporting .markdown-rendered pre {
 	background: var(--code-background);
 	border: 1px solid var(--latex-look-code-border);
 	border-radius: 2px;
 	padding: 0.75em 1em;
 }
 
-.markdown-rendered code {
+body.latex-look-exporting .markdown-rendered code {
 	font-family: var(--font-monospace, "Menlo", "Consolas", monospace);
 }
 
-.markdown-rendered p > code,
-.markdown-rendered li > code {
+body.latex-look-exporting .markdown-rendered p > code,
+body.latex-look-exporting .markdown-rendered li > code {
 	background: var(--code-background);
 	border: 1px solid var(--latex-look-code-border);
 	border-radius: 2px;
@@ -330,7 +357,7 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 /* 8. Tables (booktabs-style)                                          */
 /* ------------------------------------------------------------------ */
 
-.markdown-rendered table {
+body.latex-look-exporting .markdown-rendered table {
 	font-family: var(--latex-look-serif);
 	border-collapse: collapse;
 	border-spacing: 0;
@@ -339,19 +366,19 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	table-layout: auto;
 }
 
-.markdown-rendered table,
-.markdown-rendered table th,
-.markdown-rendered table td {
+body.latex-look-exporting .markdown-rendered table,
+body.latex-look-exporting .markdown-rendered table th,
+body.latex-look-exporting .markdown-rendered table td {
 	border-left: none;
 	border-right: none;
 }
 
-.markdown-rendered table thead tr {
+body.latex-look-exporting .markdown-rendered table thead tr {
 	border-top: 2px solid var(--latex-look-rule-color);
 	border-bottom: 1px solid var(--latex-look-rule-color);
 }
 
-.markdown-rendered table thead th {
+body.latex-look-exporting .markdown-rendered table thead th {
 	font-weight: 700;
 	text-align: left;
 	border: none;
@@ -359,22 +386,22 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 	overflow-wrap: break-word;
 }
 
-.markdown-rendered table tbody tr {
+body.latex-look-exporting .markdown-rendered table tbody tr {
 	border: none;
 	background: transparent;
 }
 
-.markdown-rendered table tbody tr:nth-child(even) {
+body.latex-look-exporting .markdown-rendered table tbody tr:nth-child(even) {
 	background: transparent;
 }
 
-.markdown-rendered table tbody td {
+body.latex-look-exporting .markdown-rendered table tbody td {
 	border: none;
 	padding: 0.3em 0.9em;
 	overflow-wrap: break-word;
 }
 
-.markdown-rendered table tbody tr:last-child {
+body.latex-look-exporting .markdown-rendered table tbody tr:last-child {
 	border-bottom: 2px solid var(--latex-look-rule-color);
 }
 
@@ -382,27 +409,32 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 /* 9. Math (MathJax)                                                    */
 /* ------------------------------------------------------------------ */
 
-.markdown-rendered mjx-container {
+body.latex-look-exporting .markdown-rendered mjx-container {
 	line-height: normal;
 }
 
-.markdown-rendered mjx-container[display="true"] {
+body.latex-look-exporting .markdown-rendered mjx-container[display="true"] {
 	margin: 0.8em 0;
 }
 
 /* ------------------------------------------------------------------ */
-/* 10. Print / PDF export                                               */
+/* 10. Print / PDF export                                              */
 /* ------------------------------------------------------------------ */
 
 /*
- * Fallback @page rule (Letter, ~1in margin). main.ts injects a small
- * dedicated <style> element after this stylesheet loads with the actual
- * paper-size setting, which overrides this by cascade order. This block
- * only matters if that injection has not happened yet for some reason.
+ * main.ts injects a small dedicated <style> element with the actual
+ * paper-size setting's @page rule at the start of the export command,
+ * which overrides this fallback by cascade order.
  *
  * IMPORTANT: Chromium's print-to-PDF dialog (which is what Obsidian's
  * "Export to PDF" uses) can override @page margins with its own margin
  * setting. See README.md for the required Obsidian export setting.
+ *
+ * This entire block only matters while the export command is running
+ * (that's the only time printing/PDF generation happens), so it doesn't
+ * strictly need the body.latex-look-exporting gate the way on-screen
+ * rules do - but the content rules inside it are scoped anyway for
+ * consistency and defense in depth.
  */
 @media print {
 	@page {
@@ -410,12 +442,12 @@ body.latex-look-heading-numbers .markdown-rendered h6::before {
 		margin: 1in;
 	}
 
-	.markdown-rendered {
+	body.latex-look-exporting .markdown-rendered {
 		font-size: var(--latex-look-font-size);
 		line-height: 1.35;
 	}
 
-	.markdown-rendered a {
+	body.latex-look-exporting .markdown-rendered a {
 		color: inherit;
 		text-decoration: none;
 	}
