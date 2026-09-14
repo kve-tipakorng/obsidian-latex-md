@@ -11,21 +11,22 @@
  * for the duration of the export command and removes immediately
  * afterward. With that class absent (i.e. normal Reading view, all the
  * time), none of these rules match anything - Reading view is untouched
- * vanilla Obsidian. Heading numbering is additionally gated behind its
- * own settings sub-class (`latex-look-heading-numbers`), also only ever
- * applied during export.
+ * vanilla Obsidian.
  *
  * Structure of this file:
  *   1. Bundled fonts (Latin Modern Roman, GUST Font License)
  *   2. Custom properties (driven live from main.ts / settings)
- *   3. Base typography (body text, paragraphs, justification, indent)
- *   4. Headings + automatic numbering (pure CSS counters)
- *   5. Title block (\maketitle-style; DOM injected by main.ts)
+ *   3. Base typography (body text, paragraphs, headings, justification, indent)
+ *   4. Title block (\maketitle-style; DOM injected by main.ts)
+ *   5. Horizontal rules (markdown `---` dividers)
  *   6. Blockquotes (LaTeX `quote` environment look)
  *   7. Code blocks (`verbatim`-style box)
  *   8. Tables (booktabs-style rules)
  *   9. Math (MathJax) - metric compatibility only
  *  10. Print / PDF export
+ *
+ * There is deliberately no automatic heading-numbering feature - see
+ * DEVLOG.md (2026-09-09) for why it was removed rather than fixed.
  */
 
 /* ------------------------------------------------------------------ */
@@ -177,94 +178,7 @@ body.latex-look-exporting .markdown-rendered h6 {
 }
 
 /* ------------------------------------------------------------------ */
-/* 4. Heading numbering: pure CSS counters                             */
-/* ------------------------------------------------------------------ */
-
-/* Obsidian's rendered reading-view headings are flat siblings (no nested
-   <section>s), but CSS counters still work correctly on a flat DOM as
-   long as counter-reset/-increment are declared on the heading elements
-   themselves in document order, so no JS post-processor is needed for
-   this feature. Scoped under both the export gate and the heading-
-   numbering sub-setting, both of which main.ts only ever applies to
-   <body> for the duration of an export. */
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered {
-	counter-reset: llh1 llh2 llh3 llh4 llh5 llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h1 {
-	counter-increment: llh1;
-	counter-reset: llh2 llh3 llh4 llh5 llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h2 {
-	counter-increment: llh2;
-	counter-reset: llh3 llh4 llh5 llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h3 {
-	counter-increment: llh3;
-	counter-reset: llh4 llh5 llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h4 {
-	counter-increment: llh4;
-	counter-reset: llh5 llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h5 {
-	counter-increment: llh5;
-	counter-reset: llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h6 {
-	counter-increment: llh6;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h1::before {
-	content: counter(llh1) "\2003";
-	font-weight: 700;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h2::before {
-	content: counter(llh1) "." counter(llh2) "\2003";
-	font-weight: 700;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h3::before {
-	content: counter(llh1) "." counter(llh2) "." counter(llh3) "\2003";
-	font-weight: 700;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h4::before {
-	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
-		counter(llh4) "\2003";
-	font-weight: 700;
-	font-style: normal;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h5::before {
-	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
-		counter(llh4) "." counter(llh5) "\2003";
-	font-weight: 700;
-	font-style: normal;
-}
-
-body.latex-look-exporting.latex-look-heading-numbers .markdown-rendered h6::before {
-	content: counter(llh1) "." counter(llh2) "." counter(llh3) "."
-		counter(llh4) "." counter(llh5) "." counter(llh6) "\2003";
-	font-weight: 700;
-	font-style: normal;
-}
-
-/* Never number Obsidian's own inline note title (a contenteditable div,
-   not a real heading) even though it visually sits above everything. */
-body.latex-look-exporting.latex-look-heading-numbers .inline-title::before {
-	content: none !important;
-}
-
-/* ------------------------------------------------------------------ */
-/* 5. Title block (\maketitle)                                         */
+/* 4. Title block (\maketitle)                                         */
 /* ------------------------------------------------------------------ */
 
 /* DOM injection of .latex-look-title-block itself is already gated in
@@ -308,6 +222,26 @@ body.latex-look-exporting .latex-look-title-block .latex-look-author {
 body.latex-look-exporting .latex-look-title-block .latex-look-date {
 	font-size: 0.95em;
 	color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Horizontal rules (markdown `---` dividers)                       */
+/* ------------------------------------------------------------------ */
+
+/* Previously unstyled, so a `---` fell back to Obsidian's default full-
+   width <hr> - visually redundant right after a table (which already
+   ends in its own full-width booktabs rule) or before a heading (which
+   already has generous top margin). A short, centered, thin rule reads
+   as a deliberate typographic section break - the classic scholarly-
+   document convention - rather than a second full-width line competing
+   with the table/title-block rules above and below it. */
+
+body.latex-look-exporting .markdown-rendered hr {
+	border: none;
+	border-top: 0.6pt solid var(--latex-look-rule-color);
+	width: 30%;
+	margin: 2em auto;
+	opacity: 0.6;
 }
 
 /* ------------------------------------------------------------------ */

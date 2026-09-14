@@ -15,14 +15,12 @@ type BaseFontSize = "10pt" | "11pt" | "12pt";
 type PaperSize = "letter" | "a4";
 
 interface LatexLookSettings {
-	headingNumbering: boolean;
 	titleBlock: boolean;
 	baseFontSize: BaseFontSize;
 	paperSize: PaperSize;
 }
 
 const DEFAULT_SETTINGS: LatexLookSettings = {
-	headingNumbering: true,
 	titleBlock: true,
 	baseFontSize: "11pt",
 	paperSize: "letter",
@@ -35,7 +33,6 @@ const PAGE_SPECS: Record<PaperSize, { size: string; margin: string }> = {
 };
 
 const BODY_EXPORTING_CLASS = "latex-look-exporting";
-const BODY_HEADING_NUMBERS_CLASS = "latex-look-heading-numbers";
 const BODY_TITLE_BLOCK_CLASS = "latex-look-title-block-enabled";
 const PRINT_STYLE_EL_ID = "latex-look-print-page-style";
 const TITLE_BLOCK_CLASS = "latex-look-title-block";
@@ -243,10 +240,6 @@ export default class LatexLookPlugin extends Plugin {
 	private applyExportStyling(): void {
 		const body = document.body;
 		body.classList.add(BODY_EXPORTING_CLASS);
-		body.classList.toggle(
-			BODY_HEADING_NUMBERS_CLASS,
-			this.settings.headingNumbering
-		);
 		body.classList.toggle(BODY_TITLE_BLOCK_CLASS, this.settings.titleBlock);
 		body.style.setProperty(
 			"--latex-look-font-size",
@@ -257,11 +250,7 @@ export default class LatexLookPlugin extends Plugin {
 
 	private clearExportStyling(): void {
 		const body = document.body;
-		body.classList.remove(
-			BODY_EXPORTING_CLASS,
-			BODY_HEADING_NUMBERS_CLASS,
-			BODY_TITLE_BLOCK_CLASS
-		);
+		body.classList.remove(BODY_EXPORTING_CLASS, BODY_TITLE_BLOCK_CLASS);
 		body.style.removeProperty("--latex-look-font-size");
 	}
 
@@ -379,20 +368,6 @@ class LatexLookSettingTab extends PluginSettingTab {
 				'Typography settings used by the "Export current note as LaTeX-look PDF" command (Command Palette). These do not affect normal Reading view, and take effect the next time you run the export command.',
 			cls: "setting-item-description",
 		});
-
-		new Setting(containerEl)
-			.setName("Automatic heading numbering")
-			.setDesc(
-				"Number headings like LaTeX \\section / \\subsection (1, 1.1, 1.1.1, ...) in the exported PDF."
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.headingNumbering)
-					.onChange(async (value) => {
-						this.plugin.settings.headingNumbering = value;
-						await this.plugin.saveSettings();
-					})
-			);
 
 		new Setting(containerEl)
 			.setName("Title block from frontmatter")

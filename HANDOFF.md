@@ -4,8 +4,10 @@
 
 The plugin is feature-complete against the current design (opt-in export
 via a Command Palette command - see `DEVLOG.md`'s 2026-09-08 entry for the
-architecture change from the original always-on-Reading-view design) and
-builds cleanly. It has **not** been visually verified inside a real
+architecture change from the original always-on-Reading-view design, and
+the 2026-09-09 entry for the heading-numbering removal and horizontal-rule
+restyling found via real-world testing) and builds cleanly. It has **not**
+been visually verified inside a real
 Obsidian instance (no Obsidian UI access in the environment this was built
 in) - see `test-artifacts/TEST_PLAN.md` for the manual verification steps
 that still need to be run by a human with Obsidian installed.
@@ -35,18 +37,13 @@ reverted as soon as the user's active leaf changes afterward.
   stable public API), and reverts all styling on the next
   `active-leaf-change` event (with a 5-minute `setTimeout` safety net in
   case that never fires).
-- All CSS in `styles.css` (typography, heading numbering, title block,
-  blockquotes, code blocks, tables) is scoped under
-  `body.latex-look-exporting`, a class only ever added to `<body>` for the
-  duration of the export command - so Reading view is untouched unless an
-  export is actively running. Heading numbering is additionally gated
-  behind its own `latex-look-heading-numbers` sub-class combined with the
-  export gate.
+- All CSS in `styles.css` (typography, title block, blockquotes, code
+  blocks, tables) is scoped under `body.latex-look-exporting`, a class
+  only ever added to `<body>` for the duration of the export command - so
+  Reading view is untouched unless an export is actively running.
 - Base typography: justified body text, first-line indent, no
   inter-paragraph blank space, tight heading spacing, headings bold/serif
   - all export-only per the above.
-- Automatic heading numbering via pure CSS counters, toggleable in
-  settings (effective next export, not live).
 - `\maketitle`-style title block from frontmatter (`title`/`subtitle`/
   `author`/`date`) via a markdown post-processor gated behind a
   `private exporting` instance flag - a no-op outside of an active
@@ -56,12 +53,14 @@ reverted as soon as the user's active leaf changes afterward.
   monospace/syntax highlighting).
 - Tables styled booktabs-style (no vertical rules, heavy top/bottom rules,
   rule under header, no banding).
+- Horizontal rules (markdown `---`) styled as a short, centered, thin
+  divider instead of Obsidian's default full-width `<hr>`.
 - Math (MathJax) left alone aside from minor line-height/margin nudges.
-- Settings tab: heading-numbering toggle, title-block toggle, base
-  font-size dropdown (10/11/12pt), paper-size dropdown (Letter/A4),
-  persisted via `loadData`/`saveData`. Descriptions updated to say they
-  control the export, not Reading view; they no longer apply "live" since
-  nothing is visible to apply them to until the export command runs.
+- Settings tab: title-block toggle, base font-size dropdown (10/11/12pt),
+  paper-size dropdown (Letter/A4), persisted via `loadData`/`saveData`.
+  Descriptions say they control the export, not Reading view; they no
+  longer apply "live" since nothing is visible to apply them to until the
+  export command runs.
 - Print/export CSS: `@media print` rules plus a JS-injected `@page`
   size/margin rule driven by the paper-size setting, written fresh at the
   start of each export.
@@ -88,6 +87,17 @@ implemented, and they were not attempted or partially started:
 - Two-column layout.
 - Obsidian community-plugin store submission prep (this is a manual-install
   / BRAT-only plugin as specified).
+- Automatic heading numbering. This existed briefly (2026-09-07/08) and was
+  **removed** on 2026-09-09 after real-world testing against an actual
+  note (not a synthetic sample) surfaced two problems: it double-numbers
+  headings that already contain their own manual numbers (common in these
+  notes' academic/reference style, e.g. "## 1. The probability model"),
+  and it swept Obsidian's own inline note title into the count as a
+  phantom "heading #1" in the real exported PDF - a genuine bug whose
+  exact DOM cause was never pinned down (see DEVLOG.md 2026-09-09). Rather
+  than chase an increasingly fragile exclusion selector, the feature was
+  deleted outright per explicit instruction rather than merely
+  defaulted-off.
 
 ### Known limitations / things a future maintainer should know
 
@@ -146,19 +156,12 @@ implemented, and they were not attempted or partially started:
      missing method degrades to a no-op rather than a crash, but if it is
      in fact missing/renamed on the tested version, the title block simply
      won't appear in the export (silently), which should be checked for.
-2. **Heading numbering scope.** CSS counters number every `h1`-`h6` inside
-   `.markdown-rendered`, including ones inside callouts or transcluded/
-   embedded notes rendered inline. This mirrors LaTeX's "everything shares
-   one counter scope" behavior reasonably well, but if KVE ever wants
-   embeds/callouts excluded from the running numbering, that would need
-   additional selector scoping (e.g. excluding `.callout` and
-   `.markdown-embed` subtrees) - not attempted here to keep scope tight.
-3. **Print margin caveat is a platform limitation, not a bug.** See
+2. **Print margin caveat is a platform limitation, not a bug.** See
    `README.md` - Electron's print-to-PDF dialog margin setting can
    override the plugin's `@page` margin. There is no CSS-only way around
    this; it needs the user to pick "None"/"Custom: 0" in Obsidian's export
    dialog.
-4. **Font subset.** Only the four core Roman weights/styles were bundled
+3. **Font subset.** Only the four core Roman weights/styles were bundled
    (Regular, Bold, Italic, Bold Italic) - no Latin Modern Sans or Latin
    Modern Mono were bundled, since the brief only asked for body-text
    typography and code blocks already use Obsidian's existing monospace
@@ -178,5 +181,11 @@ implemented, and they were not attempted or partially started:
    block with absolute `app://` URLs instead of relying on the static
    `styles.css` relative paths - the WOFF2 files and their license/
    provenance docs would not need to change, only how they're referenced.
-3. Consider whether heading numbering should skip callouts/embeds (see
-   limitation #2 above) if that turns out to look wrong in real notes.
+3. If heading numbering is ever wanted back, don't just re-add the old CSS
+   counters: first find, in a real Obsidian devtools inspector, exactly
+   what element/class wraps the note's inline title in the PDF-export DOM
+   (this was never pinned down - see DEVLOG.md 2026-09-09) so it can be
+   reliably excluded, and separately decide how to handle notes whose
+   headings already contain manual numbers (skip numbering entirely for
+   those, or attempt a "strip existing leading number" heuristic, which
+   risks misfiring on headings that legitimately start with a digit).

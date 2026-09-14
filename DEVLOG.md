@@ -290,3 +290,68 @@ first time it fires, so it never fires twice. A `setTimeout` safety net
 running the command, so the plugin can never get permanently stuck
 mid-export; `onunload()` also unconditionally clears the export state
 regardless of whether that listener/timeout ever fired.
+
+## 2026-09-09 - Heading numbering removed, horizontal rules restyled
+
+First real-world bug report, against an actual note (not synthetic test
+content or a demo harness): "KV 2026 Week 37/ANSI/ANSI-ASQ-Z1.4-2003-
+Statistical-Notes.md", exported to PDF and inspected directly (the PDF's
+`/Creator (Chromium)` / `/Producer (Skia/PDF m142)` metadata confirms it's
+a genuine Obsidian export, not a stand-in). Two problems, reported
+together as "the heading has extra numbering":
+
+**1. Double numbering on notes with their own manual section numbers.**
+This note's headings already read "## 1. The probability model", "## 2.
+The decision rule...", etc. - the author's own academic-notes convention.
+The plugin's auto-numbering doesn't know that and prepends its own count
+regardless, producing "2.2 1. The probability model" in the exported PDF.
+
+**2. A phantom numbered heading from Obsidian's own note title.** Page 1
+of the real export showed "1 ANSI-ASQ-Z1.4-2003-Statistical-Notes" (the
+filename) as a numbered heading, above the note's actual first heading -
+Obsidian's inline title being swept into the count as if it were content.
+`styles.css` already had a guard for exactly this
+(`.inline-title::before { content: none !important; }`), carried over
+from the original 2026-09-07 build - it evidently doesn't match whatever
+element Obsidian's real PDF-export pipeline actually uses for the title,
+since the real output shows it numbered anyway. The exact DOM shape there
+was never confirmed (no Obsidian devtools access in this environment);
+asked the user to inspect it directly, but decided not to chase the fix
+before getting an answer.
+
+**Decision: remove heading numbering entirely, not just fix the bug.**
+Asked the user how to handle problem 1 (leave it to the user vs. an
+auto-detect-and-skip heuristic) and problem 2 (ask for devtools help vs.
+some other approach) - the answer for problem 1 was "no automatic
+numbering for headers" at all, and a follow-up confirmed that means
+deleting the feature outright rather than merely defaulting it off. This
+resolves both problems at once (no counters running at all means nothing
+to double up, and nothing for a phantom title heading to be swept into),
+at the cost of losing the LaTeX `\section`-numbering look entirely. If
+it's reintroduced later, HANDOFF.md's suggested-next-steps section has
+the two things that would need solving first (the real title-element
+selector, and a policy for pre-numbered headings) - don't just restore
+the old CSS counters as-is.
+
+Removed: `headingNumbering` from `LatexLookSettings` and its settings-tab
+toggle (`main.ts`); the `latex-look-heading-numbers` body class and all
+`applyExportStyling`/`clearExportStyling` references to it; the entire
+CSS counter block (section 4 of the old `styles.css` numbering, counters
+`llh1`-`llh6`, the `::before` content rules, and the now-pointless
+`.inline-title::before` guard) from `styles.css`.
+
+**Also fixed while reviewing that same PDF: horizontal rules.** The note
+uses `---` fairly often as a personal section-divider convention.
+`styles.css` never had any `hr` rule at all, so it fell back to
+Obsidian's default full-width divider - which, in the real export, looked
+redundant directly under a table (which already ends in its own
+full-width booktabs bottom rule) and oddly spaced next to a numbered
+heading's own generous top margin. Rather than hide `---` entirely
+(the user's own explicit choice: restyle, not remove - some notes clearly
+use it as intentional structure), gave it a dedicated look: a short
+(30%-width), centered, thin (0.6pt), slightly translucent rule with
+generous vertical margin (`styles.css`, new section 5). This is the
+classic scholarly-document "thematic break" convention - visually
+distinct from the full-width table/title-block rules elsewhere on the
+page, so it reads as a deliberate break rather than a second copy of a
+table's bottom line.

@@ -53,9 +53,6 @@ duration of the export command** — never to Reading view in general.
   text with a first-line paragraph indent and no blank line between
   paragraphs, matching `article.cls` defaults (suppresses Obsidian's normal
   paragraph spacing).
-- **Automatic heading numbering**: H1 -> "1", H2 -> "1.1", H3 -> "1.1.1",
-  etc., like LaTeX's `\section` / `\subsection` / `\subsubsection`,
-  implemented with pure CSS counters, toggleable in settings.
 - **Title block**: if a note's frontmatter has `title`, `subtitle`,
   `author`, and/or `date`, a centered `\maketitle`-style block is rendered
   at the top of the exported PDF. Notes without that frontmatter are left
@@ -67,11 +64,14 @@ duration of the export command** — never to Reading view in general.
 - **Tables** styled "booktabs"-style: no vertical rules, a heavy rule above
   the header row, a rule below the header row, a heavy rule at the bottom,
   no row banding.
+- **Horizontal rules** (markdown `---`) styled as a short, centered, thin
+  divider — the classic scholarly-document "section break" convention —
+  instead of Obsidian's default full-width line, which looked redundant
+  next to a table's own bottom rule or a heading's top margin.
 - **Math**: Obsidian/MathJax rendering is left as-is (it already looks
   close to LaTeX); this plugin only nudges surrounding line-height so it
   doesn't clash.
 - **Settings tab** with:
-  - Toggle: automatic heading numbering (default **on**)
   - Toggle: frontmatter title block (default **on**)
   - Dropdown: base font size — 10pt / 11pt / 12pt (default **11pt**),
     matching the standard `article` class options
@@ -120,7 +120,6 @@ LaTeX-look PDF" command — they have no effect on ordinary Reading view.
 
 | Setting | Default | Effect |
 |---|---|---|
-| Automatic heading numbering | On | Adds "1", "1.1", "1.1.1" ... prefixes to H1-H6 in the exported PDF, via CSS counters. Numbering resets per note automatically. |
 | Title block from frontmatter | On | Looks for `title` / `subtitle` / `author` / `date` in a note's YAML frontmatter and renders a centered title block above the body in the exported PDF. Notes without any of these fields are unaffected. |
 | Base font size | 11pt | Sets the body text size in the exported PDF, mirroring LaTeX's `\documentclass[10pt\|11pt\|12pt]{article}` options. |
 | Paper size (export) | Letter | Sets the `@page` size and an approximate 1in (Letter) / 25mm (A4) margin used when exporting, which is what Obsidian's "Export to PDF" renders against. |
@@ -165,8 +164,10 @@ degrades gracefully rather than breaking.
 
 This plugin intentionally does **not** implement: bibliography/citation
 support, automatic table-of-contents insertion, multi-template selection,
-or two-column layout. See `HANDOFF.md` for details and suggested next
-steps if you want to extend it.
+two-column layout, or **automatic heading numbering**. Heading numbering
+was tried and removed — see `DEVLOG.md` (2026-09-09) for why. See
+`HANDOFF.md` for further details and suggested next steps if you want to
+extend it.
 
 ## Development
 

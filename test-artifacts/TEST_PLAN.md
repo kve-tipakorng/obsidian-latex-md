@@ -40,12 +40,12 @@ the current design.
 - [ ] With the plugin enabled and the sample note open, switch to Reading
       view. Confirm it looks exactly like default/vanilla Obsidian: no
       Latin Modern / serif font change, no justified or indented body
-      text, no heading numbering ("1", "1.1", ...), no title block above
-      "Overview", no booktabs-style table rules, no styled code-block
-      border beyond Obsidian's own default.
+      text, no title block above "Overview", no booktabs-style table
+      rules, no restyled horizontal rules, no styled code-block border
+      beyond Obsidian's own default.
 - [ ] Open DevTools (Ctrl/Cmd+Shift+I) and confirm `<body>` does **not**
-      have a `latex-look-exporting` class (nor `latex-look-heading-numbers`
-      / `latex-look-title-block-enabled`) while just viewing the note
+      have a `latex-look-exporting` class (nor
+      `latex-look-title-block-enabled`) while just viewing the note
       normally.
 - [ ] Open a handful of other pre-existing notes (plain notes, ones with
       tables/callouts/embeds) in Reading view and confirm none of them
@@ -58,22 +58,22 @@ the current design.
 
 Open Settings -> LaTeX Look and verify:
 
-- [ ] "Automatic heading numbering" toggle - defaults to **on**. Toggling
-      it does **not** visibly change anything in the currently open
-      Reading view (this is expected now - it only takes effect on the
-      next export).
-- [ ] "Title block from frontmatter" toggle - defaults to **on**. Same as
-      above: toggling it has no immediate visible effect on Reading view.
+- [ ] "Title block from frontmatter" toggle - defaults to **on**. Toggling
+      it has no immediate visible effect on Reading view (expected - it
+      only takes effect on the next export).
 - [ ] "Base font size" dropdown (10pt/11pt/12pt, default 11pt) - changing
       it does not visibly change the currently open Reading view.
 - [ ] "Paper size" dropdown (Letter/A4, default Letter) - changing it does
       not error or break the settings pane.
 - [ ] Close and reopen Obsidian (or disable/re-enable the plugin) and
-      confirm all four settings persisted as last set (via `data.json` in
+      confirm all three settings persisted as last set (via `data.json` in
       the plugin folder).
-- [ ] Set all four settings back to their defaults (heading numbering on,
-      title block on, 11pt, Letter) before continuing, so the export tests
-      below match the expected baseline look.
+- [ ] Set all three settings back to their defaults (title block on, 11pt,
+      Letter) before continuing, so the export tests below match the
+      expected baseline look.
+- [ ] Confirm there is no "Automatic heading numbering" toggle - this
+      feature was deliberately removed (see DEVLOG.md 2026-09-09), so its
+      absence is expected, not a regression.
 
 ## 4. Export command: happy path
 
@@ -88,21 +88,20 @@ Use `test-artifacts/sample-note.md`, which has `title`/`subtitle`/
   - [ ] If the note wasn't already in Reading view, it switches there
         automatically.
   - [ ] Briefly, the note in Reading view shows the LaTeX-look styling:
-        serif font, justified/indented body text, numbered headings ("1",
-        "1.1", "1.1.1", ... - see the same numbering-correctness checks as
-        the old plan: "Overview" = "1", "Background" = "1.1", "Results" =
-        "1.2", "Data Collection Method" = "1.1.1", "Corrective Actions" =
-        "2", "Immediate Actions" = "2.1", "Follow-up" = "2.2"), a centered
-        title block (title/subtitle/author/date) above "Overview" with a
-        rule beneath it, a booktabs-style table, a boxed code block, and a
-        LaTeX-style indented blockquote.
+        serif font, justified/indented body text (headings are plain, with
+        no auto-numbering - see DEVLOG.md 2026-09-09 for why that feature
+        was removed), a centered title block (title/subtitle/author/date)
+        above "Overview" with a rule beneath it, a booktabs-style table, a
+        boxed code block, a LaTeX-style indented blockquote, and the `---`
+        before "*End of sample note.*" rendered as a short, centered, thin
+        divider rather than Obsidian's default full-width line.
   - [ ] Obsidian's native "Export to PDF" save-file dialog appears.
 - [ ] Save the PDF somewhere in the test vault's parent folder (not inside
       the vault itself, to avoid it being picked up as a note). Open the
       resulting PDF and confirm it shows the same LaTeX-look styling
-      described above - serif font, numbering, title block, booktabs
-      table, boxed code, justified/indented body text - and that math
-      (block and inline) still renders correctly.
+      described above - serif font, title block, booktabs table, the
+      short centered horizontal rule, boxed code, justified/indented body
+      text - and that math (block and inline) still renders correctly.
 - [ ] If a PDF margin option is exposed in the export dialog, set it to
       "None"/"Custom: 0" per the README caveat and confirm the resulting
       PDF page margins roughly match 1in (Letter, the default paper-size
@@ -113,11 +112,11 @@ Use `test-artifacts/sample-note.md`, which has `title`/`subtitle`/
 - [ ] Immediately after completing (or cancelling) the export dialog in
       section 4, switch to a different note, then switch back to the
       sample note. Confirm Reading view now looks like plain, unstyled
-      Obsidian again - no serif font, no numbering, no title block, no
-      booktabs table styling.
+      Obsidian again - no serif font, no title block, no booktabs table
+      styling, no restyled horizontal rule.
 - [ ] Open DevTools and confirm `<body>` no longer has the
-      `latex-look-exporting` class (nor the heading-numbers/title-block
-      sub-classes) after switching away and back.
+      `latex-look-exporting` class (nor the `latex-look-title-block-enabled`
+      sub-class) after switching away and back.
 - [ ] Confirm no leftover `.latex-look-title-block` element remains in the
       sample note's rendered DOM (inspect via DevTools, or simply confirm
       visually that no title block renders any more above "Overview").
@@ -187,11 +186,10 @@ block only ever renders during an active export now.
 - [ ] Disable the plugin entirely (ideally right after having just run an
       export) and confirm Reading view stays/returns to Obsidian's normal
       default look with no leftover body classes or injected `<style>`
-      tags - check via DevTools that `latex-look-exporting`,
-      `latex-look-heading-numbers`, `latex-look-title-block-enabled`
-      classes are removed from `<body>` and the
-      `#latex-look-print-page-style` `<style>` element is removed from
-      `<head>`.
+      tags - check via DevTools that `latex-look-exporting` and
+      `latex-look-title-block-enabled` classes are removed from `<body>`
+      and the `#latex-look-print-page-style` `<style>` element is removed
+      from `<head>`.
 
 ## Result recording
 
