@@ -355,3 +355,81 @@ classic scholarly-document "thematic break" convention - visually
 distinct from the full-width table/title-block rules elsewhere on the
 page, so it reads as a deliberate break rather than a second copy of a
 table's bottom line.
+
+## 2026-09-16 - Wide tables were silently losing data in real exports
+
+Second real-world bug report, this time from
+"FG and Raw Material Requirements Summary.md"
+(`Notes - KV/Archive/KV 2026 Week 25/260615 RFQ 26030 Transtop-ABB RFQ/`),
+a 38-page Transtop/ABB RFQ costing document - external-facing, not
+internal notes. Exported PDF confirmed genuine (`/Creator (Chromium)`,
+`/Producer (Skia/PDF m142)`). Reported as "quite broken."
+
+**Root cause: `table-layout: auto` has no floor.** The `Material Summary`
+table (repeated per part, 7 of them) has 7 columns, two of which
+(`Customer spec`, `Notes`) hold paragraph-length text. Auto layout sizes
+each column to its natural content width and, when the columns' combined
+minimum exceeds the page's printable width, lets the table overflow its
+container rather than compress further - and a printed page can't scroll
+to compensate. The overflow was silently clipped at the page edge: on
+page 4 of the real export, the **Cost/unit (USD)** and **Notes** columns
+were completely missing, and **Unit cost** was cut down to a bare
+currency symbol with no number. This is real data loss in a document
+meant to go to a customer, not a cosmetic issue - worse in kind than the
+09-09 table-balance complaint, even though both are "the table looks
+wrong." A 6-column table elsewhere in the same document, with terser
+cells, rendered fine - confirming this only bites on wide/dense tables,
+which this document has several of.
+
+**The fix, arrived at over a few iterations (verified each time against
+the actual failing table, rendered at the real Letter-minus-1in-margins
+content width of 624px, not just eyeballed):**
+
+1. `overflow-wrap: anywhere` (up from the existing `break-word`) on
+   `th`/`td` - `break-word` only breaks at an already-allowed point
+   (after a hyphen, at a space); `anywhere` will break at an arbitrary
+   character as a last resort. This collapses each column's minimum
+   content width down to about one character, which is what actually
+   stops the overflow - `table-layout: auto` is otherwise left alone, so
+   proportional-by-content sizing (the explicit 09-09 requirement) still
+   applies whenever a table already fits.
+2. First iteration of (1) alone overcorrected: short header words like
+   "Element" got squeezed down to one letter per line ("E-l-e-m-e-n-t"),
+   ugly even though nothing was actually lost. Fixed with `min-width:
+   4.5em` on every `th`/`td`, giving short columns a floor before
+   `anywhere` kicks in. (Tried `3.5em` first; still let "Element" break
+   as "Eleme-nt" with no hyphen - `4.5em` was the value that actually
+   let it sit on one line in the verification render.) A per-column
+   floor times a realistic column count stays well under a page's usable
+   width, so it doesn't reintroduce the overflow it's meant to prevent
+   for tables in the range this plugin is meant to handle - an
+   extreme-enough column count could in principle still overflow, but
+   that's an inherent limit of keeping `auto` at all, not something
+   `table-layout: fixed` would avoid either (fixed would just make such
+   a table unreadably narrow instead).
+3. Also dropped table cell padding from `0.9em` to `0.7em` horizontal,
+   and added `table { font-size: 0.85em }` - tables now render a size
+   down from body text, which is standard LaTeX practice for wide tables
+   (`\small`/`\footnotesize`) and directly reduces how often (2)'s
+   `anywhere` fallback is needed at all, rather than just papering over
+   it with a wider floor.
+4. `code` spans inside table cells needed their own
+   `white-space: normal` override - Obsidian's inline-code styling
+   otherwise resists wrapping independently of the cell's own
+   `overflow-wrap`, which would leave a long backticked part number
+   (e.g. `301-1653200-T10`) as a fixed unbreakable chunk regardless of
+   how narrow its column got.
+
+**Rejected: switching to `table-layout: fixed`.** This would have
+guaranteed no overflow outright (offered as the recommended option), but
+the user chose to keep `auto` and add a cap instead, preserving the
+content-proportional sizing from 09-09 for the common case where a table
+does fit.
+
+**Verification method worth reusing next time:** rather than trust a
+screenshot of the full demo page (previous rounds' Combined Risk Summary
+tables all "looked fine" partly because that demo pane was wider than a
+real printed page ever would be), built a minimal isolated harness -
+just the one failing table, wrapped in a 624px box with `overflow:
+hidden` and a visible red border, so any real overflow is immediately
+obvious rather than easy to miss by eye in a long scrollable page.

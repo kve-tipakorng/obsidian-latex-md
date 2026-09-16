@@ -293,6 +293,12 @@ body.latex-look-exporting .markdown-rendered li > code {
 
 body.latex-look-exporting .markdown-rendered table {
 	font-family: var(--latex-look-serif);
+	/* LaTeX convention: tables are commonly set a size down from body
+	   text (\small / \footnotesize), especially wide ones - this also
+	   directly shrinks every column's natural content width, so normal
+	   words need aggressive (overflow-wrap: anywhere) mid-word breaking
+	   far less often than at full body size. */
+	font-size: 0.85em;
 	border-collapse: collapse;
 	border-spacing: 0;
 	margin: 1.4em auto;
@@ -316,8 +322,10 @@ body.latex-look-exporting .markdown-rendered table thead th {
 	font-weight: 700;
 	text-align: left;
 	border: none;
-	padding: 0.35em 0.9em;
-	overflow-wrap: break-word;
+	padding: 0.35em 0.7em;
+	min-width: 4.5em;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 body.latex-look-exporting .markdown-rendered table tbody tr {
@@ -331,12 +339,49 @@ body.latex-look-exporting .markdown-rendered table tbody tr:nth-child(even) {
 
 body.latex-look-exporting .markdown-rendered table tbody td {
 	border: none;
-	padding: 0.3em 0.9em;
-	overflow-wrap: break-word;
+	padding: 0.3em 0.7em;
+	min-width: 4.5em;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 body.latex-look-exporting .markdown-rendered table tbody tr:last-child {
 	border-bottom: 2px solid var(--latex-look-rule-color);
+}
+
+/* table-layout:auto has no floor below a column's natural "minimum
+   content width" (the widest run of text it refuses to break), so a
+   table with many columns and paragraph-length cells can still overflow
+   a fixed print page width even with width:100% set - the browser lets
+   the table exceed its container rather than compress further, and a
+   printed page can't scroll to compensate, so the excess is silently
+   clipped at the page edge (real data loss, confirmed against an actual
+   exported PDF - see DEVLOG.md 2026-09-16). overflow-wrap: anywhere
+   (stronger than the plain break-word above - it will break at an
+   arbitrary character, not only at an already-allowed point like a
+   hyphen or space) collapses that floor down to roughly one character's
+   width per column, which in practice removes the overflow risk while
+   keeping table-layout: auto's content-proportional distribution for
+   tables that already fit - but on its own it also let short header
+   words ("Element", "Notes") get squeezed down to single letters per
+   line on a wide, dense table, which is ugly even though nothing is
+   lost. The min-width: 4.5em above (on both th and td) puts a floor
+   under every column so that doesn't happen, while still leaving plenty
+   of room for the remaining columns to absorb the wide/prose content -
+   it does NOT reintroduce the original overflow bug on its own, since
+   3.5em x a realistic column count stays well under a page's usable
+   width; a table with an extreme number of columns could in principle
+   still overflow even with this floor, but that's an inherent limit of
+   this approach, not something table-layout: fixed would avoid either
+   (fixed would just make such a table's columns unreadably narrow
+   instead of overflowing). inline code spans (e.g. a part number in
+   backticks) need their own override below, since a monospace/code
+   style otherwise resists wrapping independently of the cell's own
+   overflow-wrap. */
+body.latex-look-exporting .markdown-rendered table code {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 /* ------------------------------------------------------------------ */
