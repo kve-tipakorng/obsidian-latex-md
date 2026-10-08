@@ -1,8 +1,8 @@
 /*
  * LaTeX Look - styles.css
  *
- * A CSS-only approximation of a classic LaTeX `article`-class layout,
- * applied ONLY while exporting the current note to PDF via the plugin's
+ * A CSS-only approximation of a LaTeX document class - `IEEEtran` or
+ * `article`, per the plugin's Template setting - applied ONLY while exporting the current note to PDF via the plugin's
  * "Export current note as LaTeX-look PDF" command. This is NOT a real TeX
  * engine; it only approximates typographic conventions using CSS.
  *
@@ -25,6 +25,11 @@
  *   9. Math (MathJax) - metric compatibility only
  *  10. Print / PDF export
  *  11. YAML properties (hidden in the exported document)
+ *  12. IEEEtran template (overrides on top of sections 3-10)
+ *
+ * Sections 3-10 are the `article` look and double as the shared base.
+ * The IEEEtran template is expressed purely as overrides in section 12,
+ * gated on a second body class, `latex-look-template-ieeetran`.
  *
  * There is deliberately no automatic heading-numbering feature - see
  * DEVLOG.md (2026-09-09) for why it was removed rather than fixed.
@@ -79,7 +84,7 @@ body {
 	   "base font size" setting. Declaring the property here has no visual
 	   effect on its own - it's only consumed by rules scoped under
 	   body.latex-look-exporting below. */
-	--latex-look-font-size: 11pt;
+	--latex-look-font-size: 10pt;
 
 	/*
 	 * Bundled Latin Modern first, then widely-available LaTeX-adjacent
@@ -453,4 +458,128 @@ body.latex-look-exporting .frontmatter-container,
 body.latex-look-exporting .markdown-rendered pre.frontmatter,
 body.latex-look-exporting .markdown-rendered .frontmatter {
 	display: none !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. IEEEtran template                                               */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Approximates IEEEtran in journal mode with the `onecolumn` option:
+ * Times at 10/12pt, the title set large and centered in regular weight,
+ * centered small-caps section headings, italic subsection headings,
+ * and tables at 8pt. Deliberately left out: the two-column layout, the
+ * author block and abstract (nothing in a note to build them from, and
+ * frontmatter stays out of the export), and automatic section numbers
+ * (I., A., 1) - see DEVLOG.md 2026-09-09 and 2026-10-08).
+ *
+ * Every rule here repeats the body.latex-look-exporting gate plus the
+ * template class, so each one outranks the base rule it overrides.
+ *
+ * Times is not bundled: it is taken from the system (Times New Roman on
+ * macOS and Windows), with free metric-compatible clones as fallbacks.
+ */
+body.latex-look-exporting.latex-look-template-ieeetran {
+	--latex-look-serif: "Times New Roman", Times, "TeX Gyre Termes",
+		"Nimbus Roman", "Nimbus Roman No9 L", "Liberation Serif", serif;
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered {
+	line-height: 1.2;
+}
+
+/* IEEEtran indents every paragraph by 1em, including the first one
+   after a section heading (unlike article.cls). */
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered p {
+	text-indent: 1em;
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered blockquote p,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered li p,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered table p,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered .callout p,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered div:has(> .latex-look-doc-title) + .el-p > p,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered .latex-look-doc-title + p {
+	text-indent: 0;
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h1,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h2,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h3,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h4,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h5,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h6 {
+	font-size: 1em;
+	font-weight: 400;
+	line-height: 1.2;
+}
+
+/* \section: H2, and any H1 after the one used as the paper title. */
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h1,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h2 {
+	font-variant: small-caps;
+	font-style: normal;
+	text-align: center;
+	letter-spacing: 0.02em;
+	margin: 1.5em 0 0.6em 0;
+}
+
+/* \subsection */
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h3 {
+	font-style: italic;
+	text-align: left;
+	margin: 1.2em 0 0.5em 0;
+}
+
+/* \subsubsection and below: italic, set in from the margin like a
+   paragraph. (The real class runs these into the following text, which
+   CSS cannot do across Obsidian's block wrappers.) */
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h4,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h5,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h6 {
+	font-style: italic;
+	text-align: left;
+	text-indent: 1em;
+	margin: 0.9em 0 0.3em 0;
+}
+
+/* Paper title: the note's first H1, tagged by main.ts. */
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered h1.latex-look-doc-title {
+	font-size: 2.4em;
+	font-variant: normal;
+	letter-spacing: normal;
+	line-height: 1.15;
+	text-align: center;
+	margin: 0 0 1.4em 0;
+}
+
+/* Tables: \footnotesize (8pt at a 10pt body), unbolded column heads,
+   thin rules. Column sizing and wrapping come from section 8. */
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered table {
+	font-size: 0.8em;
+	margin: 1.2em auto;
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered table thead tr {
+	border-top: 0.8pt solid var(--latex-look-rule-color);
+	border-bottom: 0.5pt solid var(--latex-look-rule-color);
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered table thead th {
+	font-weight: 400;
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered table tbody tr:last-child {
+	border-bottom: 0.8pt solid var(--latex-look-rule-color);
+}
+
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered pre,
+body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered .footnotes {
+	font-size: 0.8em;
+}
+
+@media print {
+	body.latex-look-exporting.latex-look-template-ieeetran .markdown-rendered {
+		line-height: 1.2;
+	}
 }

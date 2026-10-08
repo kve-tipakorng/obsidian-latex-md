@@ -2,6 +2,16 @@
 
 ## Current state
 
+**2026-10-08:** there are now two templates, selected by the Template
+setting and named after the LaTeX class each approximates: `IEEEtran`
+(default) and `article`. `article` is the original look and doubles as
+the shared CSS base (`styles.css` sections 3-10); `IEEEtran` is a set of
+overrides in section 12, gated on the body class
+`latex-look-template-ieeetran`, plus one bit of JS that tags the note's
+first H1 as the paper title. A static render of the IEEEtran rules was
+checked in a browser via `test-artifacts/ieeetran-harness.html`; a real
+Obsidian export has still not been checked. See DEVLOG.md 2026-10-08.
+
 The plugin is feature-complete against the current design (opt-in export
 via a Command Palette command - see `DEVLOG.md`'s 2026-09-08 entry for the
 architecture change from the original always-on-Reading-view design, and

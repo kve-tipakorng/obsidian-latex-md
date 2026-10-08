@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{--text-normal:#000;--background-modifier-border:#bbb;--code-background:#f5f5f5;margin:0;background:#888}
+.page{width:7.16in;margin:20px auto;padding:0.75in 0.67in;background:#fff}</style></head>
+<body class="latex-look-exporting latex-look-template-ieeetran" style="--latex-look-font-size:10pt">
+<div class="page"><div class="markdown-preview-view markdown-rendered">
+<div class="el-h1"><h1 class="latex-look-doc-title">Thermal Derating of Toroidal Inductors Under Forced Convection</h1></div>
+<div class="el-p"><p>This note summarises the derating measurements taken on the winding line during the third quarter. The intent is to give the quoting team a defensible current rating for parts that share the same core family but differ in wire gauge and turn count.</p></div>
+<div class="el-h2"><h2>Introduction</h2></div>
+<div class="el-p"><p>Inductor ratings quoted to customers have historically been taken from the core vendor's datasheet, which assumes still air at 25 degrees. Parts installed in enclosures with a fan see a markedly different thermal environment, and the datasheet figure is conservative by a wide margin.</p></div>
+<div class="el-p"><p>The second paragraph continues with an ordinary indent and no vertical gap, which is the convention the class follows throughout the body of the paper.</p></div>
+<div class="el-h3"><h3>Measurement Setup</h3></div>
+<div class="el-p"><p>Each sample was mounted on a standard test board and driven at a fixed ripple current while a thermocouple recorded the surface temperature of the winding.</p></div>
+<div class="el-h4"><h4>Airflow calibration</h4></div>
+<div class="el-p"><p>Airflow was set with a hot-wire anemometer placed 20 mm upstream of the part.</p></div>
+<div class="el-table"><table><thead><tr><th>Part</th><th>Wire</th><th>Turns</th><th>Rated current</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>700-22230-00</code></td><td>AWG 22</td><td>48</td><td>3.2 A</td><td>Baseline part, still air</td></tr>
+<tr><td><code>700-22231-00</code></td><td>AWG 20</td><td>36</td><td>4.6 A</td><td>Same core, heavier gauge</td></tr>
+<tr><td><code>700-22232-00</code></td><td>AWG 18</td><td>28</td><td>6.1 A</td><td>Measured with 2 m/s airflow across the winding</td></tr></tbody></table></div>
+<div class="el-h2"><h2>Results</h2></div>
+<div class="el-p"><p>The measured rise followed the expected square-law dependence on current. See the list below for the main observations.</p></div>
+<div class="el-ul"><ul><li>Forced air roughly halves the temperature rise.</li><li>Heavier gauge parts benefit less in relative terms.</li></ul></div>
+<div class="el-blockquote"><blockquote><p>A quoted remark from the customer specification, set as a quote environment.</p></blockquote></div>
+<div class="el-pre"><pre><code>rise = k * I^2 / (h * A)</code></pre></div>
+</div></div></body></html>

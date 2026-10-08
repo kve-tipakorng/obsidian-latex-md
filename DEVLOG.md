@@ -524,3 +524,57 @@ Change: `DEFAULT_SETTINGS.titleBlock` is now `false`. The feature and
 its setting remain for anyone who wants a `\maketitle` block. The vault
 install had no `data.json`, so the new default applies there directly;
 an install that had saved settings earlier would keep whatever it saved.
+
+## 2026-10-08 - Templates: IEEEtran added, made the default
+
+Request: mimic the IEEE Transactions template, as a template option.
+Templates are named after the LaTeX class they approximate, at the
+user's instruction: `IEEEtran` and `article` (the existing look, which
+was always an approximation of `article.cls` with Latin Modern).
+
+Decisions taken with the user before building:
+
+- Single column, not two. The notes this is used on are table-heavy.
+- Paper title = the note's first H1. No author block; nothing from YAML.
+- IEEE heading styles without automatic numbering (numbering stays
+  removed, per 2026-09-09).
+
+One point I decided myself and should be confirmed: the request said
+IEEE would be "default and only one for now", and the answer to "what
+happens to the article look" was to name things by their original
+template name. I kept `article` as a second option rather than deleting
+it. Removing it later is a small change (drop the dropdown entry and
+fold section 12 into the base).
+
+How it is built:
+
+- `settings.template`, default `ieeetran`. While exporting, the body
+  gets `latex-look-template-<id>` next to `latex-look-exporting`.
+- CSS: sections 3-10 unchanged (article, and the shared base). Section
+  12 holds the IEEEtran overrides, each selector carrying both body
+  classes so it outranks the base rule it replaces. The font swap is a
+  redefinition of `--latex-look-serif`, so everything that already uses
+  the variable follows. Times is taken from the system rather than
+  bundled - no new font files or licences.
+- Title: CSS cannot select "first H1 of the document" through Obsidian's
+  per-block wrappers, so the post-processor adds `latex-look-doc-title`.
+  In the print render the whole document arrives in one call with no
+  section info, so it is simply the first H1 found. In Reading view
+  sections arrive separately, so the section's start line is compared
+  with the first level-1 heading in the metadata cache. The class is
+  removed again on cleanup.
+- `@page` margins are now per template: IEEEtran uses approximately the
+  journal text block (43pc wide), i.e. about 0.67in side margins on
+  Letter. At 10pt in one column that is a long line (the real class's
+  `onecolumn` option has the same property). If it reads badly, widening
+  the IEEEtran margins in `PAGE_SPECS` is the knob.
+- Default base font size changed from 11pt to 10pt, which is the actual
+  default of both classes.
+
+Known approximations: IEEEtran runs subsubsection headings into the
+paragraph text; here they are separate indented italic lines. H1 after
+the title and H2 are both styled as sections.
+
+Verification: `tsc` clean; IEEEtran rules rendered in a browser through
+`test-artifacts/ieeetran-harness.html` and looked right. Not exported
+from Obsidian.
