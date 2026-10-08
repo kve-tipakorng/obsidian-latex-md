@@ -9,7 +9,8 @@ native save-file dialog Obsidian already provides).
 **Normal note viewing is untouched.** This plugin does not change how any
 note looks in Reading view, Live Preview, or Source mode. It only applies
 its styling for the duration of the export command, to the note being
-exported, and reverts automatically as soon as you switch away from it.
+exported, and reverts automatically as soon as the export finishes or is
+cancelled.
 If you never run the export command, this plugin has no visible effect at
 all.
 
@@ -30,9 +31,10 @@ specs, memos) that should look clean and professional rather than
    applies the LaTeX-look styling just to that note, and then triggers
    Obsidian's native "Export to PDF" command — the same save-file dialog
    you'd get from Obsidian's own File menu.
-4. Save the PDF wherever you like. As soon as you switch to another note
-   (or back), the plugin automatically reverts the note to plain,
-   untouched Obsidian styling — there is nothing to undo manually.
+4. Save the PDF wherever you like. As soon as the PDF has been written
+   (or you cancel the export), the plugin automatically reverts the note
+   to plain, untouched Obsidian styling and to the mode it was in before
+   (Live Preview, Source or Reading) — there is nothing to undo manually.
 
 If the command can't find Obsidian's built-in PDF export command (for
 example because the core plugin that provides it is disabled), it shows a

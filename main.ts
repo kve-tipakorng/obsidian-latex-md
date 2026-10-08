@@ -1,6 +1,5 @@
 import {
 	App,
-	EventRef,
 	MarkdownPostProcessorContext,
 	MarkdownView,
 	Notice,
@@ -8,7 +7,6 @@ import {
 	PluginSettingTab,
 	Setting,
 	TFile,
-	WorkspaceLeaf,
 } from "obsidian";
 
 type BaseFontSize = "10pt" | "11pt" | "12pt";
@@ -37,11 +35,18 @@ const BODY_TITLE_BLOCK_CLASS = "latex-look-title-block-enabled";
 const PRINT_STYLE_EL_ID = "latex-look-print-page-style";
 const TITLE_BLOCK_CLASS = "latex-look-title-block";
 
-// Defensive fallback only - the real cleanup trigger is the next
-// "active-leaf-change" event. This just guarantees the plugin can never
-// get permanently stuck in export-styled state if the user never
-// switches notes/leaves after invoking the export command.
+// Defensive fallback only - the real cleanup triggers are the print
+// window closing (export finished) or the export dialog being dismissed
+// (export cancelled). This just guarantees the plugin can never get
+// permanently stuck in export-styled state if neither is ever observed.
 const EXPORT_SAFETY_TIMEOUT_MS = 5 * 60 * 1000;
+
+// Obsidian opens its print window synchronously when the export dialog
+// is confirmed, but only renders the note into it (which is what the
+// post-processor sees) a little later. If the dialog has gone and no
+// print render shows up within this window, the export was cancelled.
+const EXPORT_CANCEL_GRACE_MS = 2000;
+const PRINT_WINDOW_POLL_MS = 200;
 
 export default class LatexLookPlugin extends Plugin {
 	settings: LatexLookSettings;
@@ -54,8 +59,13 @@ export default class LatexLookPlugin extends Plugin {
 	 * window, and the title-block post-processor is gated on this flag.
 	 */
 	private exporting = false;
-	private exportingLeaf: WorkspaceLeaf | null = null;
-	private activeLeafChangeRef: EventRef | null = null;
+	private exportingView: MarkdownView | null = null;
+	/** Mode the note was in before the export forced Reading view. */
+	private modeBeforeExport: string | null = null;
+	private printWindowSeen = false;
+	private modalObserver: MutationObserver | null = null;
+	private cancelGraceTimeoutId: number | null = null;
+	private printWindowPollId: number | null = null;
 	private exportSafetyTimeoutId: number | null = null;
 
 	async onload(): Promise<void> {
@@ -89,10 +99,7 @@ export default class LatexLookPlugin extends Plugin {
 	onunload(): void {
 		// Unconditional cleanup regardless of whether an export was in
 		// progress or a cleanup listener/timeout was pending.
-		this.clearPendingExportCleanup();
-		this.clearExportStyling();
-		this.exporting = false;
-		this.exportingLeaf = null;
+		this.finishExport();
 		this.printStyleEl?.remove();
 		this.printStyleEl = null;
 	}
@@ -114,8 +121,9 @@ export default class LatexLookPlugin extends Plugin {
 	 * Reading view if needed, applies the LaTeX-look export styling,
 	 * forces a re-render so the title-block post-processor runs while
 	 * `this.exporting` is true, then locates and triggers Obsidian's own
-	 * "Export to PDF" command. Cleanup (reverting styling) happens on the
-	 * next leaf change, or via a defensive timeout.
+	 * "Export to PDF" command. Cleanup (reverting styling and the view
+	 * mode) happens as soon as the export finishes or is cancelled - see
+	 * `registerExportCleanup`.
 	 */
 	private async exportCurrentNoteAsPdf(view: MarkdownView): Promise<void> {
 		if (!view) {
@@ -124,7 +132,12 @@ export default class LatexLookPlugin extends Plugin {
 			view = active;
 		}
 
-		if (view.getMode() !== "preview") {
+		// A previous export that was never observed finishing must not
+		// leak its state into this one.
+		this.finishExport();
+
+		const previousMode = view.getMode();
+		if (previousMode !== "preview") {
 			await view.setState(
 				{ ...view.getState(), mode: "preview" },
 				{ history: false }
@@ -132,7 +145,9 @@ export default class LatexLookPlugin extends Plugin {
 		}
 
 		this.exporting = true;
-		this.exportingLeaf = view.leaf;
+		this.exportingView = view;
+		this.modeBeforeExport = previousMode;
+		this.printWindowSeen = false;
 		this.applyExportStyling();
 
 		this.rerenderView(view);
@@ -146,12 +161,19 @@ export default class LatexLookPlugin extends Plugin {
 			new Notice(
 				'LaTeX Look: could not find Obsidian\'s built-in "Export to PDF" command (the core plugin providing it may be disabled).'
 			);
-			this.finishExport(view);
+			this.finishExport();
 			return;
 		}
 
+		const modalsBefore = new Set(this.openModals());
 		(this.app as any).commands.executeCommandById(exportCommandId);
-		this.registerExportCleanup(view);
+		this.registerExportCleanup(modalsBefore);
+	}
+
+	private openModals(): Element[] {
+		return Array.from(
+			document.body.querySelectorAll(":scope > .modal-container")
+		);
 	}
 
 	/**
@@ -180,35 +202,72 @@ export default class LatexLookPlugin extends Plugin {
 	}
 
 	/**
-	 * Rather than guessing how long the user takes to interact with the
-	 * native save dialog, cleanup is tied to the next time the workspace's
-	 * active leaf changes (the user switching away from - or back to -
-	 * the exported note). A timeout is registered alongside it purely as
-	 * a defensive fallback in case that event never fires.
+	 * Obsidian's export has no completion callback, so the two ways it
+	 * can end are observed directly:
+	 *
+	 * - Finished: Obsidian renders the note into a separate hidden print
+	 *   window and closes that window once the PDF is written. The
+	 *   post-processor notices the render happening in a foreign window
+	 *   (`watchPrintWindow`) and cleanup runs when that window closes.
+	 * - Cancelled: the export dialog goes away and no print render
+	 *   follows within EXPORT_CANCEL_GRACE_MS.
+	 *
+	 * The styling has to stay on the main window's <body> until then,
+	 * because Obsidian mirrors the main window's body classes into the
+	 * print window. A timeout backstops both in case neither is seen.
 	 */
-	private registerExportCleanup(view: MarkdownView): void {
+	private registerExportCleanup(modalsBefore: Set<Element>): void {
 		this.clearPendingExportCleanup();
 
-		const onActiveLeafChange = (): void => {
-			this.clearPendingExportCleanup();
-			this.finishExport(view);
+		const findExportModal = (): Element | null =>
+			this.openModals().find((el) => !modalsBefore.has(el)) ?? null;
+		let exportModal = findExportModal();
+
+		const onModalGone = (): void => {
+			this.modalObserver?.disconnect();
+			this.modalObserver = null;
+			this.cancelGraceTimeoutId = window.setTimeout(() => {
+				this.cancelGraceTimeoutId = null;
+				if (!this.printWindowSeen) this.finishExport();
+			}, EXPORT_CANCEL_GRACE_MS);
 		};
 
-		this.activeLeafChangeRef = this.app.workspace.on(
-			"active-leaf-change",
-			onActiveLeafChange
-		);
+		// The dialog normally exists already, but is picked up here too
+		// in case Obsidian opens it a tick after the command returns.
+		this.modalObserver = new MutationObserver(() => {
+			exportModal ??= findExportModal();
+			if (exportModal && !exportModal.isConnected) onModalGone();
+		});
+		this.modalObserver.observe(document.body, { childList: true });
 
 		this.exportSafetyTimeoutId = window.setTimeout(() => {
-			this.clearPendingExportCleanup();
-			this.finishExport(view);
+			this.finishExport();
 		}, EXPORT_SAFETY_TIMEOUT_MS);
 	}
 
+	/**
+	 * Called from the post-processor when a render of the exported note
+	 * happens in a window other than the main one, i.e. Obsidian's print
+	 * window. Reverts the export once that window has closed.
+	 */
+	private watchPrintWindow(printWindow: Window): void {
+		if (this.printWindowSeen) return;
+		this.printWindowSeen = true;
+		this.printWindowPollId = window.setInterval(() => {
+			if (printWindow.closed) this.finishExport();
+		}, PRINT_WINDOW_POLL_MS);
+	}
+
 	private clearPendingExportCleanup(): void {
-		if (this.activeLeafChangeRef) {
-			this.app.workspace.offref(this.activeLeafChangeRef);
-			this.activeLeafChangeRef = null;
+		this.modalObserver?.disconnect();
+		this.modalObserver = null;
+		if (this.cancelGraceTimeoutId !== null) {
+			window.clearTimeout(this.cancelGraceTimeoutId);
+			this.cancelGraceTimeoutId = null;
+		}
+		if (this.printWindowPollId !== null) {
+			window.clearInterval(this.printWindowPollId);
+			this.printWindowPollId = null;
 		}
 		if (this.exportSafetyTimeoutId !== null) {
 			window.clearTimeout(this.exportSafetyTimeoutId);
@@ -218,17 +277,31 @@ export default class LatexLookPlugin extends Plugin {
 
 	/**
 	 * Reverts export styling, strips any title block left injected in the
-	 * exported note's DOM, and re-renders that view once more so it snaps
-	 * back to plain Obsidian styling.
+	 * exported note's DOM, and puts that view back the way it was: the
+	 * mode it was in before the export, or a fresh re-render if it was
+	 * already in Reading view. Safe to call when no export is active.
 	 */
-	private finishExport(view: MarkdownView | null): void {
+	private finishExport(): void {
+		const view = this.exportingView;
+		const previousMode = this.modeBeforeExport;
+
+		this.clearPendingExportCleanup();
 		this.exporting = false;
+		this.exportingView = null;
+		this.modeBeforeExport = null;
+		this.printWindowSeen = false;
 		this.clearExportStyling();
-		if (view) {
-			this.removeInjectedTitleBlocks(view);
+
+		if (!view) return;
+		this.removeInjectedTitleBlocks(view);
+		if (previousMode && previousMode !== "preview") {
+			void view.setState(
+				{ ...view.getState(), mode: previousMode },
+				{ history: false }
+			);
+		} else {
 			this.rerenderView(view);
 		}
-		this.exportingLeaf = null;
 	}
 
 	/**
@@ -293,7 +366,9 @@ export default class LatexLookPlugin extends Plugin {
 
 	/**
 	 * Markdown post-processor implementing the \maketitle-style title
-	 * block. A no-op unless the plugin is actively exporting. Reads
+	 * block. A no-op unless the plugin is actively exporting. Also the
+	 * place the export's print window is detected, since this runs for
+	 * every render of the note, including Obsidian's print render. Reads
 	 * title/subtitle/author/date from the file's frontmatter (via the
 	 * metadata cache, not by re-parsing the rendered chunk) and prepends a
 	 * styled block to the reading-view container the first time any chunk
@@ -305,6 +380,12 @@ export default class LatexLookPlugin extends Plugin {
 		ctx: MarkdownPostProcessorContext
 	): void {
 		if (!this.exporting) return;
+
+		const renderWindow = el.ownerDocument.defaultView;
+		if (renderWindow && renderWindow !== window) {
+			this.watchPrintWindow(renderWindow);
+		}
+
 		if (!this.settings.titleBlock) return;
 
 		const container = el.parentElement;

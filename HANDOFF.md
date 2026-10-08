@@ -15,7 +15,7 @@ that still need to be run by a human with Obsidian installed.
 Normal Reading view is now untouched by default. All LaTeX-look styling is
 applied only for the duration of running the **"Export current note as
 LaTeX-look PDF"** command from the Command Palette, and is automatically
-reverted as soon as the user's active leaf changes afterward.
+reverted as soon as the export finishes or is cancelled.
 
 ### Done
 
@@ -34,9 +34,12 @@ reverted as soon as the user's active leaf changes afterward.
   title-block post-processor runs, dynamically locates and triggers
   Obsidian's built-in "Export to PDF" command (matched by regex over
   `app.commands.commands` rather than a hardcoded id - the id isn't a
-  stable public API), and reverts all styling on the next
-  `active-leaf-change` event (with a 5-minute `setTimeout` safety net in
-  case that never fires).
+  stable public API), and reverts all styling and the note's previous
+  view mode when the export ends: when Obsidian's hidden print window
+  closes (finished), or when the export dialog is dismissed with no print
+  render following within 2s (cancelled), with a 5-minute `setTimeout`
+  safety net. See DEVLOG.md 2026-10-08 for how those signals were found
+  in Obsidian's own code.
 - All CSS in `styles.css` (typography, title block, blockquotes, code
   blocks, tables) is scoped under `body.latex-look-exporting`, a class
   only ever added to `<body>` for the duration of the export command - so
@@ -134,14 +137,14 @@ implemented, and they were not attempted or partially started:
      between styling application and export capture that the
      requestAnimationFrame+50ms delay in `exportCurrentNoteAsPdf` doesn't
      fully cover.
-   - Whether `"active-leaf-change"` reliably fires exactly once in the
-     expected way after a native OS save dialog closes (as opposed to,
-     say, firing multiple times, or not firing if focus handling around a
-     native dialog is unusual on some platform) - if it fires zero times,
-     the 5-minute safety-net timeout is the only thing that recovers; if
-     it fires unexpectedly early (e.g. some platform quirk triggers it
-     while the save dialog is still open), styling could revert before
-     the PDF is actually captured.
+   - Whether the revert-on-export-end signals (2026-10-08) behave as
+     read from Obsidian's bundled code: the print render arriving in a
+     separate popup window that closes when the PDF is written, and the
+     export dialog being a direct `.modal-container` child of
+     `document.body`. Both are internals and version-specific. If the
+     print-window signal stops firing, the cancel path reverts styling 2s
+     after the dialog closes, which could be before the PDF is captured -
+     the symptom would be unstyled PDFs.
    - Whether the relative `url("fonts/...")` paths in `styles.css`
      actually resolve inside Obsidian's plugin CSS loading pipeline on
      their Obsidian version/platform (this is documented as supported for

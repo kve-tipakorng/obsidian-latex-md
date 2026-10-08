@@ -109,14 +109,21 @@ Use `test-artifacts/sample-note.md`, which has `title`/`subtitle`/
 
 ## 5. Export command: reverts automatically after use
 
-- [ ] Immediately after completing (or cancelling) the export dialog in
-      section 4, switch to a different note, then switch back to the
-      sample note. Confirm Reading view now looks like plain, unstyled
-      Obsidian again - no serif font, no title block, no booktabs table
-      styling, no restyled horizontal rule.
+- [ ] Complete an export from section 4 and do nothing else. Within about
+      a second of the "PDF Saved" notice, confirm Reading view looks like
+      plain, unstyled Obsidian again - no serif font, no title block, no
+      booktabs table styling, no restyled horizontal rule - without
+      switching notes. Confirm the PDF itself is still fully styled.
+- [ ] Run the command and press Cancel in the export dialog. Confirm the
+      note reverts within about two seconds.
+- [ ] Run the command, press "Export to PDF", then cancel the save-file
+      dialog, then Cancel the export dialog. Confirm the note reverts.
+- [ ] Start from Live Preview (and again from Source mode), run the
+      export. Confirm the note returns to that same mode afterwards
+      rather than staying in Reading view.
 - [ ] Open DevTools and confirm `<body>` no longer has the
       `latex-look-exporting` class (nor the `latex-look-title-block-enabled`
-      sub-class) after switching away and back.
+      sub-class) after the export ends.
 - [ ] Confirm no leftover `.latex-look-title-block` element remains in the
       sample note's rendered DOM (inspect via DevTools, or simply confirm
       visually that no title block renders any more above "Overview").
