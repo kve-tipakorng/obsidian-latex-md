@@ -455,3 +455,53 @@ because the post-processor reads `metadataCache`, not the hidden DOM.
 Not verified in a real Obsidian export in this session - the selectors
 are Obsidian's standard class names, but the check added to TEST_PLAN
 section 8 still needs to be run by hand.
+
+## 2026-10-08 - Export now reverts as soon as it ends
+
+Reported: after generating a PDF, the note's Reading view stayed in the
+LaTeX look. That was the 09-08 design working as written (cleanup on the
+next `active-leaf-change`, else a 5-minute timeout), and it was the wrong
+design - nobody switches panes just to get their note back.
+
+The 09-08 entry said there is no signal for the export ending. There is
+one; it was found this time by reading the export code in the installed
+Obsidian's `obsidian.asar` rather than guessing:
+
+- Confirming the export dialog shows the save dialog *while the dialog is
+  still open*, then closes it and opens a hidden popup window
+  (`window.open("about:blank", ...)`), renders the note into a `.print`
+  div in that window, prints, and closes the window.
+- Obsidian mirrors the main window's `<body>` classes, `--*` inline
+  properties and `<head>` styles into that popup. That is why
+  `body.latex-look-exporting` on the main window styles the PDF at all,
+  and why it has to stay there until the print is done.
+- The print render goes through the normal post-processor pipeline, so
+  the plugin's post-processor is called with an element whose document
+  is the popup's.
+
+New cleanup, replacing the leaf-change listener:
+
+- Finished: the post-processor sees a render in a window that is not the
+  main one, records it, and polls `closed` on that window every 200ms.
+  Closed means the PDF was written (or failed) - revert.
+- Cancelled: a MutationObserver watches for the export dialog leaving
+  `document.body`. If no print render follows within 2s, it was a cancel
+  - revert. (On a save, the popup opens in the same tick the dialog
+  closes and renders about 200ms later, so 2s is generous.)
+- The 5-minute timeout stays as a backstop only.
+
+Also new: the note's previous mode (Live Preview / Source) is remembered
+and restored on revert, instead of leaving it in Reading view.
+
+`finishExport()` no longer takes a view; it reads the state it needs and
+is safe to call when nothing is exporting, so `onunload` and the start
+of a new export both just call it.
+
+Built in Docker (`tsc` clean). Not run in a live Obsidian in this session
+- TEST_PLAN section 5 was rewritten for the new behaviour and needs a
+hand run. The dependency on Obsidian printing through a separate popup
+window is version-specific: if a future version prints in the main
+window again, the "finished" signal will not fire and the cancel path
+will revert the styling 2s after the dialog closes, possibly before the
+PDF is captured. That is the first thing to check if exports come out
+unstyled after an Obsidian update.
