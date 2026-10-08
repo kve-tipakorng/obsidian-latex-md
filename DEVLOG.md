@@ -433,3 +433,25 @@ real printed page ever would be), built a minimal isolated harness -
 just the one failing table, wrapped in a 624px box with `overflow:
 hidden` and a visible red border, so any real overflow is immediately
 obvious rather than easy to miss by eye in a long scrollable page.
+
+## 2026-10-08 - YAML properties removed from the exported document
+
+Request: no YAML properties in the exported PDF. With "Properties in
+document" set to Visible, Obsidian prints the Properties panel at the top
+of the export, above the title block.
+
+Fix is CSS only (`styles.css` section 11): `display: none !important` on
+`.metadata-container`, plus the raw/legacy frontmatter renderings
+(`.frontmatter-container`, `pre.frontmatter`, `.frontmatter`), all scoped
+under `body.latex-look-exporting` like everything else, so Reading view
+outside an export is untouched. `main.ts` is unchanged, so `main.js` did
+not need a rebuild.
+
+Decision worth recording: the `\maketitle`-style title block was kept.
+It is derived from frontmatter but is not a rendering of the properties
+themselves, and it already has its own on/off setting. It keeps working
+because the post-processor reads `metadataCache`, not the hidden DOM.
+
+Not verified in a real Obsidian export in this session - the selectors
+are Obsidian's standard class names, but the check added to TEST_PLAN
+section 8 still needs to be run by hand.
