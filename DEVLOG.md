@@ -505,3 +505,22 @@ window again, the "finished" signal will not fire and the cancel path
 will revert the styling 2s after the dialog closes, possibly before the
 PDF is captured. That is the first thing to check if exports come out
 unstyled after an Obsidian update.
+
+## 2026-10-08 - Title block now off by default
+
+Follow-up to the properties entry above, which got the request wrong.
+"Remove all YAML properties from the exported doc" was about the title
+block: the note's `author: Claude` was being printed on the first page
+of the PDF. I had kept the title block on the reasoning that it is not a
+rendering of the properties - but to the reader it is exactly that.
+
+Also found while checking Obsidian's bundled CSS: Obsidian already hides
+`.metadata-container` inside `.print`, so the Properties panel never
+reached the PDF in the first place. The section 11 rule in `styles.css`
+is therefore only doing something for the on-screen Reading view during
+the export; it is harmless and was left in.
+
+Change: `DEFAULT_SETTINGS.titleBlock` is now `false`. The feature and
+its setting remain for anyone who wants a `\maketitle` block. The vault
+install had no `data.json`, so the new default applies there directly;
+an install that had saved settings earlier would keep whatever it saved.

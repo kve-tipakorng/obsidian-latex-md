@@ -55,14 +55,16 @@ duration of the export command** — never to Reading view in general.
   text with a first-line paragraph indent and no blank line between
   paragraphs, matching `article.cls` defaults (suppresses Obsidian's normal
   paragraph spacing).
-- **Title block**: if a note's frontmatter has `title`, `subtitle`,
-  `author`, and/or `date`, a centered `\maketitle`-style block is rendered
-  at the top of the exported PDF. Notes without that frontmatter are left
+- **Title block** (optional, off by default): when turned on, if a note's
+  frontmatter has `title`, `subtitle`, `author`, and/or `date`, a centered
+  `\maketitle`-style block is rendered at the top of the exported PDF.
+  Notes without that frontmatter are left
   untouched.
 - **No YAML properties in the output**: the note's frontmatter
   (Obsidian's Properties panel) is never printed in the exported PDF,
-  whatever the "Properties in document" setting is. The title block above
-  is the only thing frontmatter contributes to the document.
+  whatever the "Properties in document" setting is. With the title block
+  left off (the default), nothing from the frontmatter appears in the
+  document at all.
 - **Blockquotes** styled like a LaTeX `quote` environment (indented on both
   sides, no big decorative quotation mark).
 - **Code blocks** styled like a `verbatim` block (subtle border, existing
@@ -78,7 +80,7 @@ duration of the export command** — never to Reading view in general.
   close to LaTeX); this plugin only nudges surrounding line-height so it
   doesn't clash.
 - **Settings tab** with:
-  - Toggle: frontmatter title block (default **on**)
+  - Toggle: frontmatter title block (default **off**)
   - Dropdown: base font size — 10pt / 11pt / 12pt (default **11pt**),
     matching the standard `article` class options
   - Dropdown: paper size for export — Letter / A4 (default **Letter**)
@@ -126,7 +128,7 @@ LaTeX-look PDF" command — they have no effect on ordinary Reading view.
 
 | Setting | Default | Effect |
 |---|---|---|
-| Title block from frontmatter | On | Looks for `title` / `subtitle` / `author` / `date` in a note's YAML frontmatter and renders a centered title block above the body in the exported PDF. Notes without any of these fields are unaffected. |
+| Title block from frontmatter | Off | When on, looks for `title` / `subtitle` / `author` / `date` in a note's YAML frontmatter and renders a centered title block above the body in the exported PDF. Notes without any of these fields are unaffected. |
 | Base font size | 11pt | Sets the body text size in the exported PDF, mirroring LaTeX's `\documentclass[10pt\|11pt\|12pt]{article}` options. |
 | Paper size (export) | Letter | Sets the `@page` size and an approximate 1in (Letter) / 25mm (A4) margin used when exporting, which is what Obsidian's "Export to PDF" renders against. |
 

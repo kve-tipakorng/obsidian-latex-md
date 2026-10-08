@@ -47,7 +47,7 @@ reverted as soon as the export finishes or is cancelled.
 - Base typography: justified body text, first-line indent, no
   inter-paragraph blank space, tight heading spacing, headings bold/serif
   - all export-only per the above.
-- `\maketitle`-style title block from frontmatter (`title`/`subtitle`/
+- (Off by default since 2026-10-08.) `\maketitle`-style title block from frontmatter (`title`/`subtitle`/
   `author`/`date`) via a markdown post-processor gated behind a
   `private exporting` instance flag - a no-op outside of an active
   export, and any injected block is stripped from the DOM on cleanup.
