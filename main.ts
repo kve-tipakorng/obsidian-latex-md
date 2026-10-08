@@ -19,7 +19,7 @@ interface LatexLookSettings {
 }
 
 const DEFAULT_SETTINGS: LatexLookSettings = {
-	titleBlock: true,
+	titleBlock: false,
 	baseFontSize: "11pt",
 	paperSize: "letter",
 };
@@ -453,7 +453,7 @@ class LatexLookSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Title block from frontmatter")
 			.setDesc(
-				"Render a \\maketitle-style block (title, subtitle, author, date) at the top of the exported PDF, for notes that have matching frontmatter fields."
+				"Off by default, so nothing from a note's YAML properties appears in the exported PDF. Turn on to render a \\maketitle-style block (title, subtitle, author, date) at the top, for notes that have matching frontmatter fields."
 			)
 			.addToggle((toggle) =>
 				toggle

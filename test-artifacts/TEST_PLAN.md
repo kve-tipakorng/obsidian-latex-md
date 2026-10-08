@@ -58,7 +58,7 @@ the current design.
 
 Open Settings -> LaTeX Look and verify:
 
-- [ ] "Title block from frontmatter" toggle - defaults to **on**. Toggling
+- [ ] "Title block from frontmatter" toggle - defaults to **off**. Toggling
       it has no immediate visible effect on Reading view (expected - it
       only takes effect on the next export).
 - [ ] "Base font size" dropdown (10pt/11pt/12pt, default 11pt) - changing
@@ -76,6 +76,10 @@ Open Settings -> LaTeX Look and verify:
       absence is expected, not a regression.
 
 ## 4. Export command: happy path
+
+Turn "Title block from frontmatter" **on** first for this section (it is
+off by default); with it off, confirm separately that the exported PDF
+shows nothing from the frontmatter - no title, author or date.
 
 Use `test-artifacts/sample-note.md`, which has `title`/`subtitle`/
 `author`/`date` frontmatter and content exercising every styled element.
