@@ -9,31 +9,53 @@ import {
 	TFile,
 } from "obsidian";
 
+// Named after the LaTeX document class each one approximates.
+type Template = "ieeetran" | "article";
 type BaseFontSize = "10pt" | "11pt" | "12pt";
 type PaperSize = "letter" | "a4";
 
 interface LatexLookSettings {
+	template: Template;
 	titleBlock: boolean;
 	baseFontSize: BaseFontSize;
 	paperSize: PaperSize;
 }
 
 const DEFAULT_SETTINGS: LatexLookSettings = {
+	template: "ieeetran",
 	titleBlock: false,
-	baseFontSize: "11pt",
+	baseFontSize: "10pt",
 	paperSize: "letter",
 };
 
-// Roughly 1 inch / 25mm margins, per LaTeX article defaults for each paper size.
-const PAGE_SPECS: Record<PaperSize, { size: string; margin: string }> = {
-	letter: { size: "letter", margin: "1in" },
-	a4: { size: "A4", margin: "25mm" },
+const TEMPLATE_NAMES: Record<Template, string> = {
+	ieeetran: "IEEEtran",
+	article: "article",
+};
+
+// article: roughly 1 inch / 25mm margins, per LaTeX article defaults for
+// each paper size. IEEEtran: approximately the journal-mode text block
+// (43pc wide), which sits much closer to the paper edge.
+const PAGE_SPECS: Record<
+	Template,
+	Record<PaperSize, { size: string; margin: string }>
+> = {
+	ieeetran: {
+		letter: { size: "letter", margin: "0.75in 0.67in" },
+		a4: { size: "A4", margin: "19mm 14mm 30mm 14mm" },
+	},
+	article: {
+		letter: { size: "letter", margin: "1in" },
+		a4: { size: "A4", margin: "25mm" },
+	},
 };
 
 const BODY_EXPORTING_CLASS = "latex-look-exporting";
 const BODY_TITLE_BLOCK_CLASS = "latex-look-title-block-enabled";
 const PRINT_STYLE_EL_ID = "latex-look-print-page-style";
+const BODY_TEMPLATE_CLASS_PREFIX = "latex-look-template-";
 const TITLE_BLOCK_CLASS = "latex-look-title-block";
+const DOC_TITLE_CLASS = "latex-look-doc-title";
 
 // Defensive fallback only - the real cleanup triggers are the print
 // window closing (export finished) or the export dialog being dismissed
@@ -110,6 +132,9 @@ export default class LatexLookPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
+		if (!(this.settings.template in TEMPLATE_NAMES)) {
+			this.settings.template = DEFAULT_SETTINGS.template;
+		}
 	}
 
 	async saveSettings(): Promise<void> {
@@ -312,7 +337,10 @@ export default class LatexLookPlugin extends Plugin {
 	 */
 	private applyExportStyling(): void {
 		const body = document.body;
-		body.classList.add(BODY_EXPORTING_CLASS);
+		body.classList.add(
+			BODY_EXPORTING_CLASS,
+			BODY_TEMPLATE_CLASS_PREFIX + this.settings.template
+		);
 		body.classList.toggle(BODY_TITLE_BLOCK_CLASS, this.settings.titleBlock);
 		body.style.setProperty(
 			"--latex-look-font-size",
@@ -323,7 +351,13 @@ export default class LatexLookPlugin extends Plugin {
 
 	private clearExportStyling(): void {
 		const body = document.body;
-		body.classList.remove(BODY_EXPORTING_CLASS, BODY_TITLE_BLOCK_CLASS);
+		body.classList.remove(
+			BODY_EXPORTING_CLASS,
+			BODY_TITLE_BLOCK_CLASS,
+			...Object.keys(TEMPLATE_NAMES).map(
+				(id) => BODY_TEMPLATE_CLASS_PREFIX + id
+			)
+		);
 		body.style.removeProperty("--latex-look-font-size");
 	}
 
@@ -332,10 +366,11 @@ export default class LatexLookPlugin extends Plugin {
 	 * Chromium (the engine behind Obsidian's Export to PDF), so instead we
 	 * inject a tiny dedicated <style> element with a literal @page rule,
 	 * written fresh each time an export starts based on the current
-	 * paper-size setting.
+	 * template and paper-size settings.
 	 */
 	private updatePrintPageStyle(): void {
-		const spec = PAGE_SPECS[this.settings.paperSize] ?? PAGE_SPECS.letter;
+		const specs = PAGE_SPECS[this.settings.template];
+		const spec = specs[this.settings.paperSize] ?? specs.letter;
 		if (!this.printStyleEl) {
 			this.printStyleEl = document.createElement("style");
 			this.printStyleEl.id = PRINT_STYLE_EL_ID;
@@ -362,6 +397,41 @@ export default class LatexLookPlugin extends Plugin {
 		view.containerEl
 			.querySelectorAll(`.${TITLE_BLOCK_CLASS}`)
 			.forEach((el) => el.remove());
+		view.containerEl
+			.querySelectorAll(`.${DOC_TITLE_CLASS}`)
+			.forEach((el) => el.classList.remove(DOC_TITLE_CLASS));
+	}
+
+	/**
+	 * IEEEtran has no title of its own to draw on now that frontmatter
+	 * stays out of the export, so the note's first H1 is set as the paper
+	 * title. CSS cannot pick out "the first H1 of the document" across
+	 * Obsidian's per-section wrappers, so it is tagged here.
+	 *
+	 * Obsidian's print render hands over the whole document at once (and
+	 * has no section info), so the first H1 in it is the one. Reading
+	 * view renders section by section in no guaranteed order, so there
+	 * the section is matched against the first H1's line in the
+	 * metadata cache instead.
+	 */
+	private markDocumentTitle(
+		el: HTMLElement,
+		ctx: MarkdownPostProcessorContext
+	): void {
+		const h1 = el.querySelector("h1");
+		if (!h1) return;
+
+		const section = ctx.getSectionInfo(el);
+		if (section) {
+			const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
+			if (!(file instanceof TFile)) return;
+			const firstH1 = this.app.metadataCache
+				.getFileCache(file)
+				?.headings?.find((heading) => heading.level === 1);
+			if (firstH1?.position.start.line !== section.lineStart) return;
+		}
+
+		h1.classList.add(DOC_TITLE_CLASS);
 	}
 
 	/**
@@ -384,6 +454,10 @@ export default class LatexLookPlugin extends Plugin {
 		const renderWindow = el.ownerDocument.defaultView;
 		if (renderWindow && renderWindow !== window) {
 			this.watchPrintWindow(renderWindow);
+		}
+
+		if (this.settings.template === "ieeetran") {
+			this.markDocumentTitle(el, ctx);
 		}
 
 		if (!this.settings.titleBlock) return;
@@ -451,6 +525,21 @@ class LatexLookSettingTab extends PluginSettingTab {
 		});
 
 		new Setting(containerEl)
+			.setName("Template")
+			.setDesc(
+				"The LaTeX document class the exported PDF is styled after. IEEEtran: IEEE Transactions look in a single column - Times, the note's first H1 as the paper title, centered small-caps section headings. article: the classic LaTeX article look in Latin Modern."
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(TEMPLATE_NAMES)
+					.setValue(this.plugin.settings.template)
+					.onChange(async (value) => {
+						this.plugin.settings.template = value as Template;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Title block from frontmatter")
 			.setDesc(
 				"Off by default, so nothing from a note's YAML properties appears in the exported PDF. Turn on to render a \\maketitle-style block (title, subtitle, author, date) at the top, for notes that have matching frontmatter fields."
@@ -467,7 +556,7 @@ class LatexLookSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Base font size")
 			.setDesc(
-				"Matches the LaTeX article class options (10pt / 11pt / 12pt), used for the exported PDF."
+				"Matches the LaTeX class options (10pt / 11pt / 12pt), used for the exported PDF. Both classes default to 10pt."
 			)
 			.addDropdown((dropdown) =>
 				dropdown

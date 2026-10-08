@@ -58,6 +58,9 @@ the current design.
 
 Open Settings -> LaTeX Look and verify:
 
+- [ ] "Template" dropdown - offers IEEEtran and article, defaults to
+      **IEEEtran**.
+
 - [ ] "Title block from frontmatter" toggle - defaults to **off**. Toggling
       it has no immediate visible effect on Reading view (expected - it
       only takes effect on the next export).
@@ -215,3 +218,38 @@ Record pass/fail plus any screenshots for each numbered section above in
 a dated file alongside this one (e.g.
 `test-artifacts/TEST_RESULTS_<date>.md`) when this plan is actually run
 against a live Obsidian instance.
+
+## 10. IEEEtran template
+
+`test-artifacts/ieeetran-harness.html` is a static page that applies
+`styles.css` to hand-written Obsidian-like markup. Opening it in a
+browser shows the intended look; it does not replace the checks below.
+Sections 4 and 8 above describe the `article` template - set Template to
+article to run them.
+
+With Template set to IEEEtran, export a note that starts with an H1 and
+has H2/H3/H4 headings, several paragraphs and a table:
+
+- [ ] Body text is Times, justified, single column, every paragraph
+      indented including the first after a heading.
+- [ ] The first H1 is the large centered title. No author, date or other
+      YAML content appears anywhere.
+- [ ] H2 headings are centered small caps; H3 italic flush left; H4
+      italic and indented. No heading is bold or numbered.
+- [ ] A second H1 further down, if the note has one, is styled as a
+      section heading, not as a second title.
+- [ ] Tables are visibly smaller than body text, with thin top, header
+      and bottom rules, and nothing is clipped at the page edge.
+- [ ] Page margins are narrower than the article template's (with the
+      export dialog's margin set to None - see README).
+- [ ] After the export, the note is back to normal and the H1 looks like
+      an ordinary Obsidian H1 again.
+- [ ] Repeat with "Include file name as title" ticked in Obsidian's
+      export dialog: the file name becomes the title and the note's own
+      H1 becomes a section heading. Expected, but worth knowing.
+
+### Result (2026-10-08)
+
+Static harness only: rendered in a browser at IEEE Letter text width,
+title, section/subsection/subsubsection headings, paragraph indents and
+the table all as intended. No Obsidian export run.
