@@ -248,6 +248,11 @@ has H2/H3/H4 headings, several paragraphs and a table:
       export dialog: the note's H1 is still the title and the file name
       does not appear. On a note with no H1, the file name is the title.
 
+- [ ] Set Template to article and export the same note: the first H1 is
+      a centered, regular-weight title; a later H1 is a bold left-aligned
+      section heading; the file name does not appear when "Include file
+      name as title" is ticked.
+
 ### Result (2026-10-08)
 
 Static harness only: rendered in a browser at IEEE Letter text width,

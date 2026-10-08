@@ -67,7 +67,10 @@ styled after. Templates are named after the class they approximate.
     section numbers (I., A., 1)). Type numbers into your headings if you
     want them.
 - **`article`** — the classic LaTeX `article` look in bundled Latin Modern
-  Roman, described under Features below.
+  Roman, described under Features below. The note's first H1 is the
+  title here too (centered, large, regular weight, as `\maketitle` sets
+  it), with the same file-name rule as above; later H1s are bold section
+  headings.
 
 ## Features
 

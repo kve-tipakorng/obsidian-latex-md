@@ -589,3 +589,17 @@ container (Obsidian wraps every block of the note in a div), so when the
 note has an H1 of its own the file-name heading is removed before the
 title is tagged. A note with no H1 keeps the file name as its title.
 IEEEtran only; `article` is unchanged. Not exported from Obsidian.
+
+## 2026-10-08 - article: first H1 as title too
+
+Same treatment as IEEEtran, at the user's request: `markDocumentTitle`
+now runs for every template (including dropping the export dialog's
+file-name heading when the note has its own H1), and the base CSS styles
+`h1.latex-look-doc-title` the way `\maketitle` sets `\title` in
+article.cls - centered, about `\LARGE`, regular weight. Later H1s keep
+the bold section style.
+
+If the optional frontmatter title block is turned on as well, a note
+with both a `title:` field and an H1 will show two titles. Left as is:
+the block is off by default and that combination is the user's choice.
+Not exported from Obsidian.
