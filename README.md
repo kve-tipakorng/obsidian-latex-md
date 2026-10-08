@@ -55,7 +55,10 @@ styled after. Templates are named after the class they approximate.
     indented 1em. Times comes from the system (Times New Roman on macOS
     and Windows); it is not bundled.
   - The note's **first H1 becomes the paper title**: large, centered,
-    regular weight. Nothing is taken from the YAML.
+    regular weight. Nothing is taken from the YAML. If "Include file
+    name as title" is ticked in Obsidian's export dialog, the file name
+    is dropped in favour of the H1 (it is only used when the note has no
+    H1 at all).
   - H2 (and any later H1) are sections: centered small caps. H3 are
     subsections: italic, flush left. H4 and below: italic, indented.
   - Tables at 8pt with thin rules and unbolded column heads.
