@@ -183,6 +183,16 @@ body.latex-look-exporting .markdown-rendered h6 {
 	margin: 1.1em 0 0.4em 0;
 }
 
+/* Document title: the note's first H1, tagged by main.ts. Set the way
+   article.cls's \maketitle sets \title - centered, \LARGE, regular
+   weight - rather than as a section heading. */
+body.latex-look-exporting .markdown-rendered h1.latex-look-doc-title {
+	font-size: 1.75em;
+	font-weight: 400;
+	text-align: center;
+	margin: 0.5em 0 1.5em 0;
+}
+
 /* ------------------------------------------------------------------ */
 /* 4. Title block (\maketitle)                                         */
 /* ------------------------------------------------------------------ */

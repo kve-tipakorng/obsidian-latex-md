@@ -403,9 +403,8 @@ export default class LatexLookPlugin extends Plugin {
 	}
 
 	/**
-	 * IEEEtran has no title of its own to draw on now that frontmatter
-	 * stays out of the export, so the note's first H1 is set as the paper
-	 * title. CSS cannot pick out "the first H1 of the document" across
+	 * Frontmatter stays out of the export by default, so in every
+	 * template the note's first H1 is set as the document title. CSS cannot pick out "the first H1 of the document" across
 	 * Obsidian's per-section wrappers, so it is tagged here.
 	 *
 	 * Obsidian's print render hands over the whole document at once (and
@@ -469,9 +468,7 @@ export default class LatexLookPlugin extends Plugin {
 			this.watchPrintWindow(renderWindow);
 		}
 
-		if (this.settings.template === "ieeetran") {
-			this.markDocumentTitle(el, ctx);
-		}
+		this.markDocumentTitle(el, ctx);
 
 		if (!this.settings.titleBlock) return;
 
@@ -540,7 +537,7 @@ class LatexLookSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Template")
 			.setDesc(
-				"The LaTeX document class the exported PDF is styled after. IEEEtran: IEEE Transactions look in a single column - Times, the note's first H1 as the paper title, centered small-caps section headings. article: the classic LaTeX article look in Latin Modern."
+				"The LaTeX document class the exported PDF is styled after. IEEEtran: IEEE Transactions look in a single column - Times, the note's first H1 as the paper title, centered small-caps section headings. article: the classic LaTeX article look in Latin Modern. Both use the note's first H1 as the title."
 			)
 			.addDropdown((dropdown) =>
 				dropdown
