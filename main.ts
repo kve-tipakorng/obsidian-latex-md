@@ -15,14 +15,12 @@ type BaseFontSize = "10pt" | "11pt" | "12pt";
 type PaperSize = "letter" | "a4";
 
 interface LatexLookSettings {
-	template: Template;
 	titleBlock: boolean;
 	baseFontSize: BaseFontSize;
 	paperSize: PaperSize;
 }
 
 const DEFAULT_SETTINGS: LatexLookSettings = {
-	template: "ieeetran",
 	titleBlock: false,
 	baseFontSize: "10pt",
 	paperSize: "letter",
@@ -81,6 +79,8 @@ export default class LatexLookPlugin extends Plugin {
 	 * window, and the title-block post-processor is gated on this flag.
 	 */
 	private exporting = false;
+	/** Template of the export in progress (or of the last one). */
+	private exportTemplate: Template = "ieeetran";
 	private exportingView: MarkdownView | null = null;
 	/** Mode the note was in before the export forced Reading view. */
 	private modeBeforeExport: string | null = null;
@@ -101,19 +101,23 @@ export default class LatexLookPlugin extends Plugin {
 			this.titleBlockPostProcessor.bind(this)
 		);
 
-		this.addCommand({
-			id: "export-latex-look-pdf",
-			name: "Export current note as LaTeX-look PDF",
-			checkCallback: (checking: boolean): boolean => {
-				const view =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (!view) return false;
-				if (!checking) {
-					void this.exportCurrentNoteAsPdf(view);
-				}
-				return true;
-			},
-		});
+		// One export command per template, so the template is picked in
+		// the Command Palette at the moment of exporting.
+		for (const template of Object.keys(TEMPLATE_NAMES) as Template[]) {
+			this.addCommand({
+				id: `export-${template}-pdf`,
+				name: `Export current note as ${TEMPLATE_NAMES[template]} PDF`,
+				checkCallback: (checking: boolean): boolean => {
+					const view =
+						this.app.workspace.getActiveViewOfType(MarkdownView);
+					if (!view) return false;
+					if (!checking) {
+						void this.exportCurrentNoteAsPdf(view, template);
+					}
+					return true;
+				},
+			});
+		}
 
 		this.addSettingTab(new LatexLookSettingTab(this.app, this));
 	}
@@ -132,9 +136,6 @@ export default class LatexLookPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
-		if (!(this.settings.template in TEMPLATE_NAMES)) {
-			this.settings.template = DEFAULT_SETTINGS.template;
-		}
 	}
 
 	async saveSettings(): Promise<void> {
@@ -150,7 +151,10 @@ export default class LatexLookPlugin extends Plugin {
 	 * mode) happens as soon as the export finishes or is cancelled - see
 	 * `registerExportCleanup`.
 	 */
-	private async exportCurrentNoteAsPdf(view: MarkdownView): Promise<void> {
+	private async exportCurrentNoteAsPdf(
+		view: MarkdownView,
+		template: Template
+	): Promise<void> {
 		if (!view) {
 			const active = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (!active) return;
@@ -170,6 +174,7 @@ export default class LatexLookPlugin extends Plugin {
 		}
 
 		this.exporting = true;
+		this.exportTemplate = template;
 		this.exportingView = view;
 		this.modeBeforeExport = previousMode;
 		this.printWindowSeen = false;
@@ -213,11 +218,14 @@ export default class LatexLookPlugin extends Plugin {
 			| undefined;
 		if (!commands) return null;
 
+		// This plugin's own export commands match the pattern too.
+		const ownPrefix = `${this.manifest.id}:`;
 		const pattern = /export.*pdf/i;
 		for (const key of Object.keys(commands)) {
 			const command = commands[key];
 			if (
 				command &&
+				!command.id.startsWith(ownPrefix) &&
 				(pattern.test(command.id) || pattern.test(command.name))
 			) {
 				return command.id;
@@ -339,7 +347,7 @@ export default class LatexLookPlugin extends Plugin {
 		const body = document.body;
 		body.classList.add(
 			BODY_EXPORTING_CLASS,
-			BODY_TEMPLATE_CLASS_PREFIX + this.settings.template
+			BODY_TEMPLATE_CLASS_PREFIX + this.exportTemplate
 		);
 		body.classList.toggle(BODY_TITLE_BLOCK_CLASS, this.settings.titleBlock);
 		body.style.setProperty(
@@ -365,11 +373,11 @@ export default class LatexLookPlugin extends Plugin {
 	 * @page size/margin cannot be driven by CSS custom properties in
 	 * Chromium (the engine behind Obsidian's Export to PDF), so instead we
 	 * inject a tiny dedicated <style> element with a literal @page rule,
-	 * written fresh each time an export starts based on the current
-	 * template and paper-size settings.
+	 * written fresh each time an export starts based on the template
+	 * being exported and the paper-size setting.
 	 */
 	private updatePrintPageStyle(): void {
-		const specs = PAGE_SPECS[this.settings.template];
+		const specs = PAGE_SPECS[this.exportTemplate];
 		const spec = specs[this.settings.paperSize] ?? specs.letter;
 		if (!this.printStyleEl) {
 			this.printStyleEl = document.createElement("style");
@@ -530,24 +538,9 @@ class LatexLookSettingTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "LaTeX Look" });
 		containerEl.createEl("p", {
 			text:
-				'Typography settings used by the "Export current note as LaTeX-look PDF" command (Command Palette). These do not affect normal Reading view, and take effect the next time you run the export command.',
+				'Settings used by the "Export current note as IEEEtran PDF" and "Export current note as article PDF" commands (Command Palette). The template is chosen by which command you run. These do not affect normal Reading view, and take effect the next time you export.',
 			cls: "setting-item-description",
 		});
-
-		new Setting(containerEl)
-			.setName("Template")
-			.setDesc(
-				"The LaTeX document class the exported PDF is styled after. IEEEtran: IEEE Transactions look in a single column - Times, the note's first H1 as the paper title, centered small-caps section headings. article: the classic LaTeX article look in Latin Modern. Both use the note's first H1 as the title."
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOptions(TEMPLATE_NAMES)
-					.setValue(this.plugin.settings.template)
-					.onChange(async (value) => {
-						this.plugin.settings.template = value as Template;
-						await this.plugin.saveSettings();
-					})
-			);
 
 		new Setting(containerEl)
 			.setName("Title block from frontmatter")
@@ -581,7 +574,7 @@ class LatexLookSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Paper size (export)")
 			.setDesc(
-				'Target page width and margin used when exporting via "Export current note as LaTeX-look PDF". See the README for an important caveat about Obsidian\'s PDF export margin setting.'
+				'Target page width and margin used when exporting; the margin depends on the template. See the README for an important caveat about Obsidian\'s PDF export margin setting.'
 			)
 			.addDropdown((dropdown) =>
 				dropdown

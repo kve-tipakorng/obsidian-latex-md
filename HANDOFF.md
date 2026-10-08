@@ -2,8 +2,10 @@
 
 ## Current state
 
-**2026-10-08:** there are now two templates, selected by the Template
-setting and named after the LaTeX class each approximates: `IEEEtran`
+**2026-10-08:** there are now two templates, each with its own Command
+Palette export command (`export-ieeetran-pdf`, `export-article-pdf` -
+there is no template setting, and the old `export-latex-look-pdf`
+command is gone) and named after the LaTeX class each approximates: `IEEEtran`
 (default) and `article`. `article` is the original look and doubles as
 the shared CSS base (`styles.css` sections 3-10); `IEEEtran` is a set of
 overrides in section 12, gated on the body class
@@ -23,8 +25,9 @@ in) - see `test-artifacts/TEST_PLAN.md` for the manual verification steps
 that still need to be run by a human with Obsidian installed.
 
 Normal Reading view is now untouched by default. All LaTeX-look styling is
-applied only for the duration of running the **"Export current note as
-LaTeX-look PDF"** command from the Command Palette, and is automatically
+applied only for the duration of running one of the **"Export current
+note as IEEEtran PDF" / "... as article PDF"** commands from the Command
+Palette, and is automatically
 reverted as soon as the export finishes or is cancelled.
 
 ### Done
@@ -37,8 +40,9 @@ reverted as soon as the export finishes or is cancelled.
   under `fonts/`, sourced from the CTAN `lm` package (GUST Font License)
   and converted with `fonttools` inside Docker - no CDN, no network calls
   at runtime. License + provenance documented in `fonts/`.
-- Command Palette command `export-latex-look-pdf` ("Export current note as
-  LaTeX-look PDF"), available only when there's an active `MarkdownView`
+- Command Palette commands `export-ieeetran-pdf` and
+  `export-article-pdf` ("Export current note as IEEEtran PDF" / "... as
+  article PDF"), each available only when there's an active `MarkdownView`
   (via `checkCallback`), that: switches the view to preview mode if
   needed, applies export-only styling, forces a re-render so the
   title-block post-processor runs, dynamically locates and triggers
