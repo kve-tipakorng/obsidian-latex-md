@@ -603,3 +603,25 @@ If the optional frontmatter title block is turned on as well, a note
 with both a `title:` field and an H1 will show two titles. Left as is:
 the block is off by default and that combination is the user's choice.
 Not exported from Obsidian.
+
+## 2026-10-08 - Template is chosen in the Command Palette, not in settings
+
+Request: pick the template from the Command Palette instead of the
+settings page. There is now one export command per template, generated
+from `TEMPLATE_NAMES`: `export-ieeetran-pdf` ("Export current note as
+IEEEtran PDF") and `export-article-pdf` ("Export current note as article
+PDF"). The Template dropdown and `settings.template` are gone; the
+template of the running export lives in `exportTemplate` on the plugin
+instance. A stale `template` key in an existing `data.json` is harmless.
+
+The previous command id, `export-latex-look-pdf`, no longer exists, so
+a hotkey bound to it needs rebinding to one of the two new commands.
+
+Separate commands were chosen over a single command that opens a picker:
+one step instead of two, each can have its own hotkey, and typing "IEEE"
+or "article" in the palette finds it directly.
+
+Side fix: `findExportToPdfCommandId` now skips this plugin's own
+commands. They match `/export.*pdf/i` as well, and it was only command
+registration order that kept the lookup from returning one of them.
+Not exported from Obsidian.

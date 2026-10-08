@@ -9,7 +9,8 @@ before trusting the plugin's visual output.
 
 **Architecture reminder (as of 2026-09-08):** this plugin no longer styles
 Reading view by default. All LaTeX-look styling is applied only while the
-"Export current note as LaTeX-look PDF" command is actively running,
+one of the export commands ("Export current note as IEEEtran PDF" /
+"... as article PDF") is actively running,
 scoped to the note being exported, and is reverted automatically as soon
 as the active leaf changes afterward. Section 2 below (confirming Reading
 view looks like plain Obsidian) is a new, important regression check that
@@ -58,8 +59,10 @@ the current design.
 
 Open Settings -> LaTeX Look and verify:
 
-- [ ] "Template" dropdown - offers IEEEtran and article, defaults to
-      **IEEEtran**.
+- [ ] There is no template setting. In the Command Palette, both "Export
+      current note as IEEEtran PDF" and "Export current note as article
+      PDF" are listed, and the old "Export current note as LaTeX-look
+      PDF" is not.
 
 - [ ] "Title block from frontmatter" toggle - defaults to **off**. Toggling
       it has no immediate visible effect on Reading view (expected - it
@@ -90,7 +93,7 @@ Use `test-artifacts/sample-note.md`, which has `title`/`subtitle`/
 - [ ] Open the sample note (any mode - Source, Live Preview, or Reading).
 - [ ] Open the Command Palette (Cmd/Ctrl+P) and search for "LaTeX-look" or
       "Export current note". Confirm the command **"Export current note as
-      LaTeX-look PDF"** appears and is selectable.
+      article PDF"** appears and is selectable.
 - [ ] Run the command. Confirm:
   - [ ] If the note wasn't already in Reading view, it switches there
         automatically.
@@ -158,7 +161,7 @@ the relevant core functionality.
 
 - [ ] If possible, disable whatever core plugin/feature provides
       Obsidian's "Export to PDF" command.
-- [ ] Run "Export current note as LaTeX-look PDF" on the sample note.
+- [ ] Run "Export current note as article PDF" on the sample note.
       Confirm a `Notice` appears explaining the built-in PDF export
       command could not be found.
 - [ ] Confirm the note is **not** left stuck in export-styled state - it
@@ -224,10 +227,10 @@ against a live Obsidian instance.
 `test-artifacts/ieeetran-harness.html` is a static page that applies
 `styles.css` to hand-written Obsidian-like markup. Opening it in a
 browser shows the intended look; it does not replace the checks below.
-Sections 4 and 8 above describe the `article` template - set Template to
-article to run them.
+Sections 4 and 8 above describe the `article` template - use the
+article export command to run them.
 
-With Template set to IEEEtran, export a note that starts with an H1 and
+With "Export current note as IEEEtran PDF", export a note that starts with an H1 and
 has H2/H3/H4 headings, several paragraphs and a table:
 
 - [ ] Body text is Times, justified, single column, every paragraph
@@ -247,8 +250,11 @@ has H2/H3/H4 headings, several paragraphs and a table:
 - [ ] Repeat with "Include file name as title" ticked in Obsidian's
       export dialog: the note's H1 is still the title and the file name
       does not appear. On a note with no H1, the file name is the title.
+- [ ] Export with one template, then immediately with the other, on the
+      same note: each PDF has its own look and margins, with nothing
+      carried over from the previous export.
 
-- [ ] Set Template to article and export the same note: the first H1 is
+- [ ] Export the same note with the article command: the first H1 is
       a centered, regular-weight title; a later H1 is a bold left-aligned
       section heading; the file name does not appear when "Include file
       name as title" is ticked.

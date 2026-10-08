@@ -1,8 +1,8 @@
 # LaTeX Look
 
-An Obsidian plugin that adds a Command Palette command,
-**"Export current note as LaTeX-look PDF"**, which exports the currently
-open note as a PDF typeset to look like a LaTeX document class — `IEEEtran`
+An Obsidian plugin that adds two Command Palette commands, **"Export
+current note as IEEEtran PDF"** and **"Export current note as article
+PDF"**, which export the currently open note as a PDF typeset to look like a LaTeX document class — `IEEEtran`
 (IEEE Transactions, the default) or `article` — via Obsidian's own built-in "Export to PDF" flow (the same
 native save-file dialog Obsidian already provides).
 
@@ -26,7 +26,8 @@ specs, memos) that should look clean and professional rather than
 
 1. Open the note you want to export.
 2. Open the Command Palette (Cmd/Ctrl+P) and run **"Export current note as
-   LaTeX-look PDF"**.
+   IEEEtran PDF"** or **"Export current note as article PDF"**, depending
+   on the look you want.
 3. The plugin switches the note to Reading view (if it isn't already),
    applies the LaTeX-look styling just to that note, and then triggers
    Obsidian's native "Export to PDF" command — the same save-file dialog
@@ -46,10 +47,12 @@ Palette.
 
 ## Templates
 
-The **Template** setting picks which LaTeX document class the export is
-styled after. Templates are named after the class they approximate.
+The template - which LaTeX document class the export is styled after -
+is picked in the Command Palette: there is one export command per
+template, named after the class it approximates. There is no template
+setting.
 
-- **`IEEEtran`** (default) — the IEEE Transactions look, in a single
+- **`IEEEtran`** — the IEEE Transactions look, in a single
   column (like the class's `onecolumn` option):
   - Body in Times at 10pt on 12pt leading, justified, every paragraph
     indented 1em. Times comes from the system (Times New Roman on macOS
@@ -109,7 +112,6 @@ duration of the export command** — never to Reading view in general.
   close to LaTeX); this plugin only nudges surrounding line-height so it
   doesn't clash.
 - **Settings tab** with:
-  - Dropdown: template — IEEEtran / article (default **IEEEtran**)
   - Toggle: frontmatter title block (default **off**)
   - Dropdown: base font size — 10pt / 11pt / 12pt (default **10pt**),
     matching the standard `article` class options
@@ -153,12 +155,11 @@ from git without a community-store listing.
 
 ## Settings explained
 
-All of these only take effect when you run the "Export current note as
-LaTeX-look PDF" command — they have no effect on ordinary Reading view.
+All of these only take effect when you run one of the export
+commands — they have no effect on ordinary Reading view.
 
 | Setting | Default | Effect |
 |---|---|---|
-| Template | IEEEtran | The LaTeX document class the exported PDF is styled after: `IEEEtran` or `article`. See Templates above. |
 | Title block from frontmatter | Off | When on, looks for `title` / `subtitle` / `author` / `date` in a note's YAML frontmatter and renders a centered title block above the body in the exported PDF. Notes without any of these fields are unaffected. |
 | Base font size | 10pt | Sets the body text size in the exported PDF, mirroring LaTeX's `\documentclass[10pt\|11pt\|12pt]{...}` options. 10pt is the default of both classes. |
 | Paper size (export) | Letter | Sets the `@page` size and margin: approximately 1in (Letter) / 25mm (A4) for `article`, and the narrower IEEE margins (about 0.75in top and bottom, 0.67in sides on Letter) for `IEEEtran`. This is what is used when exporting, which is what Obsidian's "Export to PDF" renders against. |
