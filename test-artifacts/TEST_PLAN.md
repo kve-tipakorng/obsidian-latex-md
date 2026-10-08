@@ -245,8 +245,8 @@ has H2/H3/H4 headings, several paragraphs and a table:
 - [ ] After the export, the note is back to normal and the H1 looks like
       an ordinary Obsidian H1 again.
 - [ ] Repeat with "Include file name as title" ticked in Obsidian's
-      export dialog: the file name becomes the title and the note's own
-      H1 becomes a section heading. Expected, but worth knowing.
+      export dialog: the note's H1 is still the title and the file name
+      does not appear. On a note with no H1, the file name is the title.
 
 ### Result (2026-10-08)
 

@@ -418,10 +418,23 @@ export default class LatexLookPlugin extends Plugin {
 		el: HTMLElement,
 		ctx: MarkdownPostProcessorContext
 	): void {
+		const section = ctx.getSectionInfo(el);
+
+		// Print render with "Include file name as title" ticked in
+		// Obsidian's export dialog: the file name is added as an H1
+		// sitting directly in the container, ahead of the note's own
+		// blocks (which are each wrapped in a div). The note's H1 is the
+		// title, so the file-name heading is dropped when both exist.
+		if (!section) {
+			const fileNameH1 = el.querySelector(":scope > h1");
+			if (fileNameH1 && el.querySelector(":scope > div h1")) {
+				fileNameH1.remove();
+			}
+		}
+
 		const h1 = el.querySelector("h1");
 		if (!h1) return;
 
-		const section = ctx.getSectionInfo(el);
 		if (section) {
 			const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
 			if (!(file instanceof TFile)) return;

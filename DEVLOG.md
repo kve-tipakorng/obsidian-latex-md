@@ -578,3 +578,14 @@ the title and H2 are both styled as sections.
 Verification: `tsc` clean; IEEEtran rules rendered in a browser through
 `test-artifacts/ieeetran-harness.html` and looked right. Not exported
 from Obsidian.
+
+## 2026-10-08 - IEEEtran: the H1 is the title, even over the file name
+
+With "Include file name as title" ticked in Obsidian's export dialog,
+the file name was becoming the paper title and the note's H1 a section
+heading. The user wants the H1 as the title. In the print render the
+file-name heading is the only H1 that is a direct child of the
+container (Obsidian wraps every block of the note in a div), so when the
+note has an H1 of its own the file-name heading is removed before the
+title is tagged. A note with no H1 keeps the file name as its title.
+IEEEtran only; `article` is unchanged. Not exported from Obsidian.
