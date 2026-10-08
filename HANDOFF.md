@@ -48,6 +48,11 @@ reverted as soon as the user's active leaf changes afterward.
   `author`/`date`) via a markdown post-processor gated behind a
   `private exporting` instance flag - a no-op outside of an active
   export, and any injected block is stripped from the DOM on cleanup.
+- YAML properties are hidden in the exported document (CSS only,
+  `styles.css` section 11): the Properties panel and the raw frontmatter
+  renderings are `display: none` under `body.latex-look-exporting`. The
+  title block still works because it reads the metadata cache, not that
+  DOM. Not yet verified against a real export - see TEST_PLAN section 8.
 - Blockquotes styled as a LaTeX `quote` environment.
 - Code blocks styled as a `verbatim` box (border + existing Obsidian
   monospace/syntax highlighting).

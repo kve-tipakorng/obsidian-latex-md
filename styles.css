@@ -24,6 +24,7 @@
  *   8. Tables (booktabs-style rules)
  *   9. Math (MathJax) - metric compatibility only
  *  10. Print / PDF export
+ *  11. YAML properties (hidden in the exported document)
  *
  * There is deliberately no automatic heading-numbering feature - see
  * DEVLOG.md (2026-09-09) for why it was removed rather than fixed.
@@ -430,4 +431,26 @@ body.latex-look-exporting .markdown-rendered mjx-container[display="true"] {
 		color: inherit;
 		text-decoration: none;
 	}
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. YAML properties                                                 */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Obsidian carries the note's YAML frontmatter into the exported PDF as
+ * a "Properties" panel whenever "Properties in document" is set to
+ * Visible. None of it belongs in the exported document, so every form
+ * Obsidian renders it in is dropped: the Properties panel
+ * (.metadata-container), and the raw/legacy frontmatter renderings
+ * (.frontmatter-container, pre.frontmatter, .frontmatter).
+ *
+ * The \maketitle-style title block (section 4) is unaffected - main.ts
+ * builds it from the metadata cache, not from this DOM.
+ */
+body.latex-look-exporting .metadata-container,
+body.latex-look-exporting .frontmatter-container,
+body.latex-look-exporting .markdown-rendered pre.frontmatter,
+body.latex-look-exporting .markdown-rendered .frontmatter {
+	display: none !important;
 }

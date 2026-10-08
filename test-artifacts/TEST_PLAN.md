@@ -170,6 +170,13 @@ block only ever renders during an active export now.
 - [ ] Create a note with frontmatter that has unrelated keys only (e.g.
       `tags: [foo]`) and no `title`/`subtitle`/`author`/`date`. Export it.
       Confirm no title block renders.
+- [ ] With Settings > Editor > "Properties in document" set to
+      **Visible**, export a note that has frontmatter (both one with
+      title-block keys and one with unrelated keys only, e.g. `tags`).
+      Confirm the PDF contains no Properties panel and no raw YAML, and
+      that the title block still renders for the first note. After the
+      export reverts, confirm the Properties panel is back in Reading
+      view.
 - [ ] Edit the sample note's title in Live Preview/Source mode, then run
       the export command again. Confirm the title block reflects the new
       value and does **not** duplicate (only one title block should ever

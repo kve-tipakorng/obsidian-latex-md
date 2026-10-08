@@ -57,6 +57,10 @@ duration of the export command** — never to Reading view in general.
   `author`, and/or `date`, a centered `\maketitle`-style block is rendered
   at the top of the exported PDF. Notes without that frontmatter are left
   untouched.
+- **No YAML properties in the output**: the note's frontmatter
+  (Obsidian's Properties panel) is never printed in the exported PDF,
+  whatever the "Properties in document" setting is. The title block above
+  is the only thing frontmatter contributes to the document.
 - **Blockquotes** styled like a LaTeX `quote` environment (indented on both
   sides, no big decorative quotation mark).
 - **Code blocks** styled like a `verbatim` block (subtle border, existing
